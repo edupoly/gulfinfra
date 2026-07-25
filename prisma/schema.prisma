@@ -1,0 +1,490 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["relationJoins"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id           String   @id @default(uuid())
+  slug         String   @unique
+  name         String
+  description  String?
+  icon         String?
+  listingCount Int      @default(0) @map("listing_count")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  contractors           Contractor[]
+  projectTenders        ProjectTender[]
+  equipment             Equipment[]
+  materials             Material[]
+  businessOpportunities BusinessOpportunity[]
+
+  @@map("categories")
+}
+
+model ContractorType {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  contractorLinks ContractorTypeLink[]
+
+  @@map("contractor_types")
+}
+
+model ProjectTenderType {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  projectTenderLinks ProjectTenderTypeLink[]
+
+  @@map("project_tender_types")
+}
+
+model EquipmentType {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  equipment Equipment[]
+
+  @@map("equipment_types")
+}
+
+model Country {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  cities                    City[]
+  contractorLinks           ContractorCountryLink[]
+  projectTenderCountryLinks ProjectTenderCountryLink[]
+  equipment                 Equipment[]
+  materials                 Material[]
+  businessOpportunities     BusinessOpportunity[]
+
+  @@map("countries")
+}
+
+model City {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  name        String
+  countryCode String   @map("country_code")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  country Country @relation(fields: [countryCode], references: [code])
+
+  contractorLinks        ContractorCityLink[]
+  projectTenderCityLinks ProjectTenderCityLink[]
+  equipment              Equipment[]
+  materials              Material[]
+  businessOpportunities  BusinessOpportunity[]
+
+  @@map("cities")
+}
+
+model Contractor {
+  id                String   @id @default(uuid())
+  slug              String   @unique
+  categorySlug      String   @map("category_slug")
+  name              String
+  companyType       String   @map("company_type")
+  listingStatus     String   @default("published") @map("listing_status")
+  draftTokenHash    String?  @map("draft_token_hash")
+  logoUrl           String?  @map("logo_url")
+  primaryTypeSlug   String?  @map("primary_type_slug")
+  countryCode       String?  @map("country_code")
+  citySlug          String?  @map("city_slug")
+  yearEstablished   Int?     @map("year_established")
+  employees         String?
+  website           String?
+  email             String?
+  phone             String?
+  whatsapp          String?
+  address           String?
+  description       String?
+  rating            Float?   @default(0)
+  reviewCount       Int?     @default(0) @map("review_count")
+  verified          Boolean  @default(false)
+  premium           Boolean  @default(false)
+  memberSince       String?  @map("member_since")
+  responseTime      String?  @map("response_time")
+  projectsCompleted Int?     @default(0) @map("projects_completed")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  category Category @relation(fields: [categorySlug], references: [slug])
+
+  contractorTypes  ContractorTypeLink[]
+  countries        ContractorCountryLink[]
+  cities           ContractorCityLink[]
+  services         ContractorService[]
+  areasServed      ContractorAreaServed[]
+  licenses         ContractorLicense[]
+  galleryItems     ContractorGalleryItem[]
+  documents        ContractorDocument[]
+  featuredProjects ContractorFeaturedProject[]
+
+  @@map("contractors")
+}
+
+model ContractorTypeLink {
+  contractorId       String @map("contractor_id")
+  contractorTypeSlug String @map("contractor_type_slug")
+
+  contractor     Contractor     @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+  contractorType ContractorType @relation(fields: [contractorTypeSlug], references: [slug])
+
+  @@id([contractorId, contractorTypeSlug])
+  @@map("contractor_type_links")
+}
+
+model ContractorCountryLink {
+  contractorId String @map("contractor_id")
+  countryCode  String @map("country_code")
+
+  contractor Contractor @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+  country    Country    @relation(fields: [countryCode], references: [code])
+
+  @@id([contractorId, countryCode])
+  @@map("contractor_country_links")
+}
+
+model ContractorCityLink {
+  contractorId String @map("contractor_id")
+  citySlug     String @map("city_slug")
+
+  contractor Contractor @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+  city       City       @relation(fields: [citySlug], references: [slug])
+
+  @@id([contractorId, citySlug])
+  @@map("contractor_city_links")
+}
+
+model ContractorService {
+  id           String   @id @default(uuid())
+  contractorId String   @map("contractor_id")
+  serviceName  String   @map("service_name")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  contractor Contractor @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+
+  @@map("contractor_services")
+}
+
+model ContractorAreaServed {
+  id           String   @id @default(uuid())
+  contractorId String   @map("contractor_id")
+  areaName     String   @map("area_name")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  contractor Contractor @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+
+  @@map("contractor_areas_served")
+}
+
+model ContractorLicense {
+  id           String   @id @default(uuid())
+  contractorId String   @map("contractor_id")
+  licenseName  String   @map("license_name")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  contractor Contractor @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+
+  @@map("contractor_licenses")
+}
+
+model ContractorGalleryItem {
+  id           String   @id @default(uuid())
+  contractorId String   @map("contractor_id")
+  imageUrl     String   @map("image_url")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  contractor Contractor @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+
+  @@map("contractor_gallery_items")
+}
+
+model ContractorDocument {
+  id           String   @id @default(uuid())
+  contractorId String   @map("contractor_id")
+  name         String
+  documentType String   @map("document_type")
+  documentUrl  String   @map("document_url")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  contractor Contractor @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+
+  @@map("contractor_documents")
+}
+
+model ContractorFeaturedProject {
+  id           String   @id @default(uuid())
+  contractorId String   @map("contractor_id")
+  title        String
+  location     String
+  status       String
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  contractor Contractor @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+
+  @@map("contractor_featured_projects")
+}
+
+model ProjectTender {
+  id             String   @id @default(uuid())
+  slug           String   @unique
+  categorySlug   String   @map("category_slug")
+  listingStatus  String   @default("published") @map("listing_status")
+  draftTokenHash String?  @map("draft_token_hash")
+  title          String
+  projectType    String?  @map("project_type")
+  status         String
+  summary        String?
+  description    String?
+  budget         String?
+  deadline       String?
+  client         String?
+  value          String?
+  tenderType     String?  @map("tender_type")
+  location       String?
+  posted         String?
+  featured       Boolean  @default(false)
+  imageUrls      String[] @default([]) @map("image_urls")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  category Category @relation(fields: [categorySlug], references: [slug])
+
+  projectTenderTypes ProjectTenderTypeLink[]
+  countries          ProjectTenderCountryLink[]
+  cities             ProjectTenderCityLink[]
+  sectors            ProjectTenderSector[]
+  documents          ProjectTenderDocument[]
+
+  @@map("project_tenders")
+}
+
+model ProjectTenderTypeLink {
+  projectTenderId       String @map("project_tender_id")
+  projectTenderTypeSlug String @map("project_tender_type_slug")
+
+  projectTender     ProjectTender     @relation(fields: [projectTenderId], references: [id], onDelete: Cascade)
+  projectTenderType ProjectTenderType @relation(fields: [projectTenderTypeSlug], references: [slug])
+
+  @@id([projectTenderId, projectTenderTypeSlug])
+  @@map("project_tender_type_links")
+}
+
+model ProjectTenderCountryLink {
+  projectTenderId String @map("project_tender_id")
+  countryCode     String @map("country_code")
+
+  projectTender ProjectTender @relation(fields: [projectTenderId], references: [id], onDelete: Cascade)
+  country       Country       @relation(fields: [countryCode], references: [code])
+
+  @@id([projectTenderId, countryCode])
+  @@map("project_tender_country_links")
+}
+
+model ProjectTenderCityLink {
+  projectTenderId String @map("project_tender_id")
+  citySlug        String @map("city_slug")
+
+  projectTender ProjectTender @relation(fields: [projectTenderId], references: [id], onDelete: Cascade)
+  city          City          @relation(fields: [citySlug], references: [slug])
+
+  @@id([projectTenderId, citySlug])
+  @@map("project_tender_city_links")
+}
+
+model ProjectTenderSector {
+  id              String   @id @default(uuid())
+  projectTenderId String   @map("project_tender_id")
+  sectorName      String   @map("sector_name")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  projectTender ProjectTender @relation(fields: [projectTenderId], references: [id], onDelete: Cascade)
+
+  @@map("project_tender_sectors")
+}
+
+model ProjectTenderDocument {
+  id              String   @id @default(uuid())
+  projectTenderId String   @map("project_tender_id")
+  name            String
+  documentType    String   @map("document_type")
+  documentUrl     String   @map("document_url")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  projectTender ProjectTender @relation(fields: [projectTenderId], references: [id], onDelete: Cascade)
+
+  @@map("project_tender_documents")
+}
+
+model Equipment {
+  id                String   @id @default(uuid())
+  slug              String   @unique
+  categorySlug      String   @default("equipment-marketplace") @map("category_slug")
+  listingStatus     String   @default("published") @map("listing_status")
+  draftTokenHash    String?  @map("draft_token_hash")
+  title             String
+  equipmentTypeSlug String   @map("equipment_type_slug")
+  listingType       String   @map("listing_type")
+  condition         String
+  countryCode       String   @map("country_code")
+  citySlug          String   @map("city_slug")
+  brand             String
+  model             String
+  year              Int
+  operatingHours    Int?     @map("operating_hours")
+  price             String
+  priceNote         String?  @map("price_note")
+  availability      String
+  location          String
+  description       String
+  specifications    Json
+  sellerName        String   @map("seller_name")
+  sellerType        String   @map("seller_type")
+  phone             String
+  whatsapp          String?
+  email             String?
+  verified          Boolean  @default(false)
+  featured          Boolean  @default(false)
+  images            String[]
+  posted            String?
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  category      Category            @relation(fields: [categorySlug], references: [slug])
+  equipmentType EquipmentType       @relation(fields: [equipmentTypeSlug], references: [slug])
+  country       Country             @relation(fields: [countryCode], references: [code])
+  city          City                @relation(fields: [citySlug], references: [slug])
+  documents     EquipmentDocument[]
+
+  @@index([equipmentTypeSlug])
+  @@index([listingType])
+  @@index([condition])
+  @@index([countryCode])
+  @@map("equipment")
+}
+
+model EquipmentDocument {
+  id           String   @id @default(uuid())
+  equipmentId  String   @map("equipment_id")
+  name         String
+  documentType String   @map("document_type")
+  documentUrl  String   @map("document_url")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  equipment Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+
+  @@map("equipment_documents")
+}
+
+model Material {
+  id               String   @id @default(uuid())
+  slug             String   @unique
+  categorySlug     String   @default("construction-materials") @map("category_slug")
+  listingStatus    String   @default("published") @map("listing_status")
+  draftTokenHash   String?  @map("draft_token_hash")
+  name             String
+  materialGroup    String   @map("material_group")
+  materialType     String   @map("material_type")
+  materialTypeSlug String   @map("material_type_slug")
+  listingType      String   @map("listing_type")
+  countryCode      String   @map("country_code")
+  citySlug         String   @map("city_slug")
+  supplier         String
+  priceRange       String   @map("price_range")
+  minimumOrder     String   @map("minimum_order")
+  availability     String
+  leadTime         String   @map("lead_time")
+  compliance       String[]
+  description      String
+  specifications   Json
+  phone            String
+  whatsapp         String?
+  email            String?
+  verified         Boolean  @default(false)
+  image            String?
+  galleryImages    String[] @default([]) @map("gallery_images")
+  posted           String?
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  category  Category           @relation(fields: [categorySlug], references: [slug])
+  country   Country            @relation(fields: [countryCode], references: [code])
+  city      City               @relation(fields: [citySlug], references: [slug])
+  documents MaterialDocument[]
+
+  @@index([materialGroup])
+  @@index([materialTypeSlug])
+  @@index([listingType])
+  @@index([countryCode])
+  @@map("materials")
+}
+
+model MaterialDocument {
+  id           String   @id @default(uuid())
+  materialId   String   @map("material_id")
+  name         String
+  documentType String   @map("document_type")
+  documentUrl  String   @map("document_url")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  material Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  @@map("material_documents")
+}
+
+model BusinessOpportunity {
+  id               String   @id @default(uuid())
+  slug             String   @unique
+  categorySlug     String   @default("business-opportunities") @map("category_slug")
+  listingStatus    String   @default("published") @map("listing_status")
+  draftTokenHash   String?  @map("draft_token_hash")
+  title            String
+  section          String
+  businessCategory String   @map("business_category")
+  investment       String
+  countryCode      String   @map("country_code")
+  citySlug         String   @map("city_slug")
+  contact          String
+  phone            String
+  whatsapp         String?
+  description      String
+  image            String?
+  galleryImages    String[] @default([]) @map("gallery_images")
+  postedDate       String?  @map("posted_date")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  category  Category                      @relation(fields: [categorySlug], references: [slug])
+  country   Country                       @relation(fields: [countryCode], references: [code])
+  city      City                          @relation(fields: [citySlug], references: [slug])
+  documents BusinessOpportunityDocument[]
+
+  @@index([section])
+  @@index([businessCategory])
+  @@index([countryCode])
+  @@map("business_opportunities")
+}
+
+model BusinessOpportunityDocument {
+  id                    String   @id @default(uuid())
+  businessOpportunityId String   @map("business_opportunity_id")
+  name                  String
+  documentType          String   @map("document_type")
+  documentUrl           String   @map("document_url")
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  businessOpportunity BusinessOpportunity @relation(fields: [businessOpportunityId], references: [id], onDelete: Cascade)
+
+  @@map("business_opportunity_documents")
+}

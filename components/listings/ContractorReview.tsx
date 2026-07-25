@@ -1,0 +1,113 @@
+"use client";
+
+import {
+  publishContractor,
+  type ContractorPublishState,
+  type ContractorReviewData,
+} from "@/app/add-listing/actions";
+import Link from "next/link";
+import { useActionState } from "react";
+
+export function ContractorReview({
+  contractorId,
+  editToken,
+  review,
+}: {
+  contractorId: string;
+  editToken: string;
+  review: ContractorReviewData;
+}) {
+  const initialState: ContractorPublishState = { success: false, message: "" };
+  const [state, formAction, pending] = useActionState(
+    publishContractor,
+    initialState,
+  );
+
+  if (state.success && state.slug) {
+    return (
+      <section className="w-full rounded-[38px] border border-slate-200 bg-white px-5 py-10 shadow-[0_18px_60px_rgba(15,23,42,0.08)] sm:px-10 sm:py-14 lg:px-20">
+        <Progress activeStep={4} complete />
+        <div className="mx-auto mt-16 max-w-2xl rounded-3xl border border-emerald-200 bg-emerald-50 px-6 py-12 text-center">
+          <div className="mx-auto grid size-16 place-items-center rounded-full bg-emerald-600 text-3xl font-black text-white">✓</div>
+          <p className="mt-6 text-sm font-black uppercase tracking-[0.2em] text-emerald-700">Listing published</p>
+          <h1 className="mt-3 text-3xl font-black tracking-tight text-[#0b1f3a] sm:text-4xl">Your contractor profile is live</h1>
+          <p className="mt-4 text-lg text-slate-600">{state.message}</p>
+          <Link href={`/contractors/${state.slug}`} className="mt-7 inline-flex rounded-full bg-[#0b1f3a] px-7 py-3 font-black text-white hover:bg-slate-700">
+            View contractor profile →
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="w-full rounded-[38px] border border-slate-200 bg-white px-5 py-10 shadow-[0_18px_60px_rgba(15,23,42,0.08)] sm:px-10 sm:py-14 lg:px-20">
+      <Progress activeStep={4} />
+      <div className="mx-auto mt-12 max-w-4xl text-center">
+        <p className="text-sm font-black uppercase tracking-[0.2em] text-amber-600">Step 4 of 4 · Review</p>
+        <h1 className="mt-3 text-3xl font-black tracking-tight text-[#0b1f3a] sm:text-5xl">Review Your Listing</h1>
+        <p className="mt-4 text-lg text-slate-500">Check the information below before saving and publishing the contractor profile.</p>
+      </div>
+
+      <div className="mx-auto mt-10 max-w-5xl space-y-6">
+        <ReviewSection title="Company information">
+          <Item label="Company" value={review.name} />
+          <Item label="Company type" value={review.companyType} />
+          <Item label="Established" value={String(review.yearEstablished ?? "—")} />
+          <Item label="Employees" value={review.employees ?? "—"} />
+          <Item label="Specializations" value={review.contractorTypes.join(", ")} wide />
+          <Item label="Services" value={review.services.join(", ")} wide />
+        </ReviewSection>
+
+        <ReviewSection title="Location & contact">
+          <Item label="Location" value={[review.city, review.country].filter(Boolean).join(", ")} />
+          <Item label="Phone" value={review.phone ?? "—"} />
+          <Item label="Address" value={review.address ?? "—"} wide />
+          <Item label="Areas served" value={review.areasServed.join(", ") || "—"} />
+          <Item label="Email" value={review.email ?? "—"} />
+          <Item label="WhatsApp" value={review.whatsapp ?? "—"} />
+          <Item label="Website" value={review.website ?? "—"} />
+        </ReviewSection>
+
+        <ReviewSection title="Profile">
+          <Item label="Description" value={review.description ?? "—"} wide />
+          <Item label="Projects completed" value={String(review.projectsCompleted ?? 0)} />
+          <Item label="Response time" value={review.responseTime ?? "—"} />
+        </ReviewSection>
+
+        <ReviewSection title="Media & documents">
+          <Item label="Logo" value={review.logoUrl ? "Added" : "Not added"} />
+          <Item label="Gallery images" value={String(review.galleryUrls.length)} />
+          <Item label="Documents" value={review.documents.length ? review.documents.map((item) => `${item.name} (${item.documentType})`).join(", ") : "None added"} wide />
+        </ReviewSection>
+
+        {state.message && !state.success && (
+          <p className="rounded-2xl bg-red-50 p-4 text-center font-bold text-red-700" role="alert">{state.message}</p>
+        )}
+
+        <form action={formAction} className="flex justify-end border-t border-slate-200 pt-6">
+          <input type="hidden" name="contractorId" value={contractorId} />
+          <input type="hidden" name="editToken" value={editToken} />
+          <button type="submit" disabled={pending} className="rounded-full bg-amber-400 px-8 py-3.5 font-black text-slate-950 hover:bg-amber-300 disabled:cursor-wait disabled:opacity-60">
+            {pending ? "Saving & Publishing…" : "Save & Publish Listing →"}
+          </button>
+        </form>
+      </div>
+    </section>
+  );
+}
+
+function ReviewSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return <section className="rounded-3xl border border-slate-200 p-5 sm:p-7"><h2 className="text-xl font-black text-[#0b1f3a]">{title}</h2><dl className="mt-5 grid gap-5 sm:grid-cols-2">{children}</dl></section>;
+}
+
+function Item({ label, value, wide = false }: { label: string; value: string; wide?: boolean }) {
+  return <div className={wide ? "sm:col-span-2" : ""}><dt className="text-xs font-black uppercase tracking-wider text-slate-500">{label}</dt><dd className="mt-1 break-words font-semibold text-slate-800">{value}</dd></div>;
+}
+
+function Progress({ activeStep, complete = false }: { activeStep: number; complete?: boolean }) {
+  return <ol aria-label="Add listing progress" className="relative mx-auto flex w-full max-w-6xl items-center justify-between">
+    <div aria-hidden="true" className="absolute left-5 right-5 top-1/2 h-1 -translate-y-1/2 bg-amber-400" />
+    {[1, 2, 3, 4].map((step) => <li key={step} aria-current={!complete && step === activeStep ? "step" : undefined} className="relative z-10 grid size-11 place-items-center rounded-full border-4 border-amber-400 bg-amber-400 text-lg font-black text-slate-950 sm:size-14">{step < activeStep || complete ? "✓" : step}</li>)}
+  </ol>;
+}
