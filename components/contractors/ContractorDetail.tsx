@@ -7,14 +7,18 @@ type Props = {
 
 export function ContractorDetail({ contractor }: Props) {
   return (
-    <div className="space-y-8">
-      <section className="rounded-3xl bg-gradient-to-br from-slate-900 to-slate-700 p-8 text-white shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <div className="space-y-8 pb-8">
+      <section className="relative left-1/2 w-dvw -translate-x-1/2 bg-gradient-to-br from-slate-950 to-slate-700 text-white shadow-xl">
+        <div className="mx-auto w-full max-w-7xl px-4 pb-24 pt-10 sm:px-6 sm:pb-28 lg:px-8">
+          <Link href="/contractors" className="mb-8 inline-flex text-sm font-semibold text-slate-300 transition hover:text-amber-300">
+            ← Back to Contractors
+          </Link>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <span className="mb-3 inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold">
               VERIFIED CONTRACTOR
             </span>
-            <h1 className="text-3xl font-bold">{contractor.name}</h1>
+            <h1 className="text-3xl font-bold !text-white">{contractor.name}</h1>
             <p className="mt-2 text-slate-200">
               {contractor.companyType} • Established {contractor.yearEstablished}
             </p>
@@ -25,7 +29,22 @@ export function ContractorDetail({ contractor }: Props) {
             <div>Employees: {contractor.employees}</div>
             <div>Response Time: {contractor.responseTime}</div>
           </div>
+          </div>
         </div>
+      </section>
+
+      <section className="relative z-10 -mt-20 grid overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          ["Company type", contractor.companyType],
+          ["Established", String(contractor.yearEstablished)],
+          ["Projects completed", String(contractor.projectsCompleted)],
+          ["Verification status", "Verified contractor"],
+        ].map(([label, value]) => (
+          <div key={label} className="border-b border-slate-200 p-5 last:border-b-0 sm:odd:border-r xl:border-b-0 xl:border-r xl:last:border-r-0">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">{label}</p>
+            <p className="mt-1 text-lg font-black text-slate-950">{value}</p>
+          </div>
+        ))}
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">

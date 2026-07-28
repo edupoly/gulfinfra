@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { createHash, randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { getCurrentUser } from "@/lib/auth";
 
 export type ProjectDraftState = {
   success: boolean;
@@ -276,6 +277,8 @@ export async function publishProject(
   _state: ProjectPublishState,
   data: FormData,
 ): Promise<ProjectPublishState> {
+  const user = await getCurrentUser();
+  if (!user) return { success: false, message: "Verify your email before publishing." };
   const projectId = text(data, "projectId");
   const editToken = text(data, "editToken");
   const draft = await prisma.projectTender.findFirst({
@@ -290,6 +293,7 @@ export async function publishProject(
       data: {
         listingStatus: "published",
         draftTokenHash: null,
+        ownerId: user.id,
         posted: new Date().toLocaleDateString("en-GB"),
       },
     });

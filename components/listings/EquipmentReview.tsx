@@ -4,6 +4,7 @@ import { publishEquipment, type EquipmentPublishState, type EquipmentReviewData 
 import { Progress } from "@/components/listings/ProjectListingForm";
 import Link from "next/link";
 import { useActionState } from "react";
+import { ListingPublishGate } from "@/components/auth/ListingPublishGate";
 
 export function EquipmentReview({ equipmentId, editToken, review }: { equipmentId: string; editToken: string; review: EquipmentReviewData }) {
   const [state, action, pending] = useActionState(publishEquipment, { success: false, message: "" } satisfies EquipmentPublishState);
@@ -16,7 +17,7 @@ export function EquipmentReview({ equipmentId, editToken, review }: { equipmentI
       <Section title="Seller / buyer"><Item label="Name" value={review.sellerName} /><Item label="Account type" value={review.sellerType} /><Item label="Phone" value={review.phone} /><Item label="WhatsApp" value={review.whatsapp ?? "—"} /><Item label="Email" value={review.email ?? "—"} /></Section>
       <Section title="Media & documents"><Item label="Photos" value={String(review.images.length)} /><Item label="Documents" value={review.documents.length ? review.documents.map((item) => `${item.name} (${item.documentType})`).join(", ") : "None added"} wide /></Section>
       {state.message && !state.success && <p role="alert" className="rounded-2xl bg-red-50 p-4 text-center font-bold text-red-700">{state.message}</p>}
-      <form action={action} className="flex justify-end border-t border-slate-200 pt-6"><input type="hidden" name="equipmentId" value={equipmentId} /><input type="hidden" name="editToken" value={editToken} /><button disabled={pending} className="rounded-full bg-amber-400 px-8 py-3.5 font-black text-slate-950 disabled:opacity-60">{pending ? "Saving & Publishing…" : "Save & Publish Equipment →"}</button></form>
+      <ListingPublishGate email={review.email}><form action={action} className="flex justify-end"><input type="hidden" name="equipmentId" value={equipmentId} /><input type="hidden" name="editToken" value={editToken} /><button disabled={pending} className="rounded-full bg-amber-400 px-8 py-3.5 font-black text-slate-950 disabled:opacity-60">{pending ? "Saving & Publishing…" : "Save & Publish Equipment →"}</button></form></ListingPublishGate>
     </div>
   </section>;
 }

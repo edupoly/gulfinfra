@@ -10,7 +10,7 @@ import {
 const directoryLinks = [
   { label: "Contractors Directory", href: "/contractors" },
   { label: "Projects & Tenders", href: "/projects-tenders" },
-  { label: "RFQ Board", href: "/projects-tenders" },
+  { label: "RFQ Board", href: "/rfqs" },
   { label: "Heavy Machinery", href: "/equipment-marketplace" },
   { label: "Construction Materials", href: "/construction-materials" },
 ] as const;

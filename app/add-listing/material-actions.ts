@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { createHash, randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { getCurrentUser } from "@/lib/auth";
 
 const materialTypes = new Map([
   ["cement-concrete", "Cement & Concrete"], ["structural-steel", "Structural Steel"],
@@ -134,11 +135,13 @@ export async function saveMaterialMedia(_state: MaterialMediaState, data: FormDa
 }
 
 export async function publishMaterial(_state: MaterialPublishState, data: FormData): Promise<MaterialPublishState> {
+  const user = await getCurrentUser();
+  if (!user) return { success: false, message: "Verify your email before publishing." };
   const materialId = text(data, "materialId"), editToken = text(data, "editToken");
   const draft = await prisma.material.findFirst({ where: { id: materialId, listingStatus: "draft", draftTokenHash: hash(editToken) }, select: { id: true, slug: true } });
   if (!draft) return { success: false, message: "This material draft could not be verified." };
   try {
-    await prisma.material.update({ where: { id: draft.id }, data: { listingStatus: "published", draftTokenHash: null, posted: new Date().toLocaleDateString("en-GB") } });
+    await prisma.material.update({ where: { id: draft.id }, data: { listingStatus: "published", draftTokenHash: null, ownerId: user.id, posted: new Date().toLocaleDateString("en-GB") } });
     revalidatePath("/construction-materials");
     revalidatePath(`/construction-materials/${draft.slug}`);
     return { success: true, message: "Your material listing has been published.", slug: draft.slug };

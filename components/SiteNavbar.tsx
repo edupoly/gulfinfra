@@ -3,17 +3,19 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { logout } from "@/app/auth/actions";
 
 const navigation = [
   { name: "Home", href: "/" },
   { name: "Contractors", href: "/contractors" },
   { name: "Projects & Tenders", href: "/projects-tenders" },
+  { name: "RFQs", href: "/rfqs" },
   { name: "Equipment Marketplace", href: "/equipment-marketplace" },
   { name: "Construction & Industrial Materials", href: "/construction-materials" },
   { name: "Business Opportunities", href: "/business-opportunities" },
 ];
 
-export function SiteNavbar() {
+export function SiteNavbar({ userEmail }: { userEmail: string | null }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -46,7 +48,15 @@ export function SiteNavbar() {
             </ul>
           </nav>
           <div className="mt-5 flex flex-col items-start gap-2 border-t border-white/10 pt-5 xl:mt-0 xl:items-end xl:border-0 xl:pt-0">
-            <div className="flex items-center gap-2 text-xs font-bold text-white/90"><span>♙ Login</span><span className="text-white/25">|</span><span>♙ Register</span></div>
+            {userEmail ? (
+              <div className="flex items-center gap-2 text-xs font-bold text-white/90">
+                <Link href="/my-listings" onClick={() => setOpen(false)}>My Listings</Link>
+                <span className="text-white/25">|</span>
+                <form action={logout}><button type="submit">Logout</button></form>
+              </div>
+            ) : (
+              <Link href="/login" onClick={() => setOpen(false)} className="text-xs font-bold text-white/90">♙ Login / Register</Link>
+            )}
             <Link href="/add-listing" onClick={() => setOpen(false)} className={`rounded-md px-4 py-2 text-xs font-black shadow-sm transition ${pathname === "/add-listing" ? "bg-white text-[#0b1f3a]" : "bg-amber-400 text-[#0b1f3a] hover:bg-amber-300"}`}>＋ Add Listing</Link>
           </div>
         </div>

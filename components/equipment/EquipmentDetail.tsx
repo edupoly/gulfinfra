@@ -25,16 +25,16 @@ export function EquipmentDetail({ equipment }: { equipment: EquipmentProfile }) 
     .padStart(4, "0")}`;
 
   return (
-    <div className="space-y-7">
-      <Link
-        href="/equipment-marketplace"
-        className="inline-flex text-sm font-semibold text-slate-600 hover:text-amber-700"
-      >
-        ← Back to Equipment Marketplace
-      </Link>
-
-      <section className="overflow-hidden rounded-[32px] bg-slate-950 text-white shadow-xl">
-        <div className="grid lg:grid-cols-[1.1fr_0.9fr]">
+    <div className="space-y-7 pb-8">
+      <section className="relative left-1/2 w-dvw -translate-x-1/2 overflow-hidden bg-slate-950 text-white shadow-xl">
+        <div className="mx-auto w-full max-w-7xl px-4 pb-24 pt-8 sm:px-6 sm:pb-28 lg:px-8">
+          <Link
+            href="/equipment-marketplace"
+            className="mb-6 inline-flex text-sm font-semibold text-slate-300 transition hover:text-amber-300"
+          >
+            ← Back to Equipment Marketplace
+          </Link>
+          <div className="grid overflow-hidden rounded-3xl border border-white/10 bg-white/5 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="relative min-h-80 overflow-hidden bg-slate-800">
             <Image
               src={heroImage}
@@ -59,7 +59,7 @@ export function EquipmentDetail({ equipment }: { equipment: EquipmentProfile }) 
             <p className="text-sm font-bold uppercase tracking-[0.2em] text-amber-300">
               {equipment.equipmentType}
             </p>
-            <h1 className="mt-2 text-3xl font-black sm:text-4xl">{equipment.title}</h1>
+            <h1 className="mt-2 text-3xl font-black !text-white sm:text-4xl">{equipment.title}</h1>
             <p className="mt-3 text-slate-300">{equipment.location}</p>
             <div className="mt-7 border-t border-white/10 pt-6">
               <p className="text-3xl font-black text-amber-300">{equipment.price}</p>
@@ -76,10 +76,11 @@ export function EquipmentDetail({ equipment }: { equipment: EquipmentProfile }) 
               )}
             </div>
           </div>
+          </div>
         </div>
       </section>
 
-      <section className="grid overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm sm:grid-cols-2 xl:grid-cols-4">
+      <section className="relative z-10 -mt-20 grid overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl sm:grid-cols-2 xl:grid-cols-4">
         {[
           ["Asking price / budget", equipment.price],
           ["Listing purpose", equipment.listingType],

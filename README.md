@@ -1,5 +1,13 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Email authentication
+
+Authentication uses email OTPs, an HTTP-only database-backed session, and a
+password created after the first successful verification. Configure
+`RESEND_API_KEY` and `AUTH_EMAIL_FROM` as shown in `.env.example` to deliver
+codes by email. In non-production environments without those values, the OTP
+is printed to the server console and displayed in the verification panel.
+
 ## Getting Started
 
 First, run the development server:

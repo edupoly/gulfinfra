@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { createHash, randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { getCurrentUser } from "@/lib/auth";
 
 export type EquipmentDraftState = { success: boolean; message: string; equipmentId?: string; editToken?: string; errors?: Record<string, string> };
 export type EquipmentReviewData = {
@@ -136,11 +137,13 @@ export async function saveEquipmentMedia(_state: EquipmentMediaState, data: Form
 }
 
 export async function publishEquipment(_state: EquipmentPublishState, data: FormData): Promise<EquipmentPublishState> {
+  const user = await getCurrentUser();
+  if (!user) return { success: false, message: "Verify your email before publishing." };
   const equipmentId = text(data, "equipmentId"), editToken = text(data, "editToken");
   const draft = await prisma.equipment.findFirst({ where: { id: equipmentId, listingStatus: "draft", draftTokenHash: hash(editToken) }, select: { id: true, slug: true } });
   if (!draft) return { success: false, message: "This equipment draft could not be verified." };
   try {
-    await prisma.equipment.update({ where: { id: draft.id }, data: { listingStatus: "published", draftTokenHash: null, posted: new Date().toLocaleDateString("en-GB") } });
+    await prisma.equipment.update({ where: { id: draft.id }, data: { listingStatus: "published", draftTokenHash: null, ownerId: user.id, posted: new Date().toLocaleDateString("en-GB") } });
     revalidatePath("/equipment-marketplace");
     revalidatePath(`/equipment-marketplace/${draft.slug}`);
     return { success: true, message: "Your equipment listing has been published.", slug: draft.slug };

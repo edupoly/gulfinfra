@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { createHash, randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { getCurrentUser } from "@/lib/auth";
 
 export type BusinessDraftState = { success: boolean; message: string; opportunityId?: string; editToken?: string; errors?: Record<string, string> };
 export type BusinessReviewData = {
@@ -102,11 +103,13 @@ export async function saveBusinessMedia(_state: BusinessMediaState, data: FormDa
 }
 
 export async function publishBusiness(_state: BusinessPublishState, data: FormData): Promise<BusinessPublishState> {
+  const user = await getCurrentUser();
+  if (!user) return { success: false, message: "Verify your email before publishing." };
   const opportunityId = text(data, "opportunityId"), editToken = text(data, "editToken");
   const draft = await prisma.businessOpportunity.findFirst({ where: { id: opportunityId, listingStatus: "draft", draftTokenHash: hash(editToken) }, select: { id: true, slug: true } });
   if (!draft) return { success: false, message: "This opportunity draft could not be verified." };
   try {
-    await prisma.businessOpportunity.update({ where: { id: draft.id }, data: { listingStatus: "published", draftTokenHash: null, postedDate: new Date().toLocaleDateString("en-GB") } });
+    await prisma.businessOpportunity.update({ where: { id: draft.id }, data: { listingStatus: "published", draftTokenHash: null, ownerId: user.id, postedDate: new Date().toLocaleDateString("en-GB") } });
     revalidatePath("/business-opportunities");
     revalidatePath(`/business-opportunities/${draft.slug}`);
     return { success: true, message: "Your business opportunity has been published.", slug: draft.slug };

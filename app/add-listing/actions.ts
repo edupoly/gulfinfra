@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { createHash, randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { getCurrentUser } from "@/lib/auth";
 
 export type ContractorDraftState = {
   success: boolean;
@@ -451,6 +452,8 @@ export async function publishContractor(
   _previousState: ContractorPublishState,
   formData: FormData,
 ): Promise<ContractorPublishState> {
+  const user = await getCurrentUser();
+  if (!user) return { success: false, message: "Verify your email before publishing." };
   const contractorId = text(formData, "contractorId");
   const editToken = text(formData, "editToken");
 
@@ -479,6 +482,7 @@ export async function publishContractor(
       data: {
         listingStatus: "published",
         draftTokenHash: null,
+        ownerId: user.id,
         memberSince: String(new Date().getFullYear()),
       },
     });

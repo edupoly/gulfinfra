@@ -14,22 +14,22 @@ export function ProjectTenderDetail({
   const isOpen = project.status.toLowerCase().includes("open");
 
   return (
-    <div className="space-y-7">
-      <Link
-        href="/projects-tenders"
-        className="inline-flex text-sm font-semibold text-slate-600 hover:text-amber-700"
-      >
-        ← Back to Projects & Tenders
-      </Link>
-
-      <section className="rounded-[32px] bg-gradient-to-br from-slate-950 to-slate-800 p-7 text-white shadow-xl sm:p-10">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+    <div className="space-y-7 pb-8">
+      <section className="relative left-1/2 w-dvw -translate-x-1/2 bg-gradient-to-br from-slate-950 to-slate-800 text-white shadow-xl">
+        <div className="mx-auto w-full max-w-7xl px-4 pb-24 pt-8 sm:px-6 sm:pb-28 sm:pt-10 lg:px-8">
+          <Link
+            href="/projects-tenders"
+            className="mb-8 inline-flex text-sm font-semibold text-slate-300 transition hover:text-amber-300"
+          >
+            ← Back to Projects & Tenders
+          </Link>
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.22em] text-amber-300">
               {project.projectType} · {referenceId}
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-3">
-              <h1 className="max-w-4xl text-3xl font-black sm:text-4xl">
+              <h1 className="max-w-4xl text-3xl font-black !text-white sm:text-4xl">
                 {project.title}
               </h1>
               <span
@@ -50,10 +50,11 @@ export function ProjectTenderDetail({
           <span className="w-fit rounded-full border border-white/20 px-4 py-2 text-sm font-bold">
             {project.tenderType}
           </span>
+          </div>
         </div>
       </section>
 
-      <section className="grid overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm sm:grid-cols-2 xl:grid-cols-4">
+      <section className="relative z-10 -mt-20 grid overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl sm:grid-cols-2 xl:grid-cols-4">
         {[
           ["Capital value", project.value || project.budget],
           ["Bid deadline", project.deadline],

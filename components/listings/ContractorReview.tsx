@@ -7,6 +7,7 @@ import {
 } from "@/app/add-listing/actions";
 import Link from "next/link";
 import { useActionState } from "react";
+import { ListingPublishGate } from "@/components/auth/ListingPublishGate";
 
 export function ContractorReview({
   contractorId,
@@ -85,13 +86,15 @@ export function ContractorReview({
           <p className="rounded-2xl bg-red-50 p-4 text-center font-bold text-red-700" role="alert">{state.message}</p>
         )}
 
-        <form action={formAction} className="flex justify-end border-t border-slate-200 pt-6">
+        <ListingPublishGate email={review.email}>
+        <form action={formAction} className="flex justify-end">
           <input type="hidden" name="contractorId" value={contractorId} />
           <input type="hidden" name="editToken" value={editToken} />
           <button type="submit" disabled={pending} className="rounded-full bg-amber-400 px-8 py-3.5 font-black text-slate-950 hover:bg-amber-300 disabled:cursor-wait disabled:opacity-60">
             {pending ? "Saving & Publishing…" : "Save & Publish Listing →"}
           </button>
         </form>
+        </ListingPublishGate>
       </div>
     </section>
   );

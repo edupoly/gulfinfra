@@ -8,6 +8,7 @@ import {
 import { Progress } from "@/components/listings/ProjectListingForm";
 import Link from "next/link";
 import { useActionState } from "react";
+import { ListingPublishGate } from "@/components/auth/ListingPublishGate";
 
 export function ProjectReview({
   projectId,
@@ -35,7 +36,7 @@ export function ProjectReview({
       <Section title="Location & scope"><Item label="Location" value={[review.location, review.city, review.country].filter(Boolean).join(", ")} wide /><Item label="Sectors" value={review.sectors.join(", ")} wide /><Item label="Summary" value={review.summary ?? "—"} wide /><Item label="Description" value={review.description ?? "—"} wide /></Section>
       <Section title="Media & documents"><Item label="Project images" value={String(review.imageUrls.length)} /><Item label="Documents" value={review.documents.length ? review.documents.map((item) => `${item.name} (${item.documentType})`).join(", ") : "None added"} wide /></Section>
       {state.message && !state.success && <p role="alert" className="rounded-2xl bg-red-50 p-4 text-center font-bold text-red-700">{state.message}</p>}
-      <form action={action} className="flex justify-end border-t border-slate-200 pt-6"><input type="hidden" name="projectId" value={projectId} /><input type="hidden" name="editToken" value={editToken} /><button disabled={pending} className="rounded-full bg-amber-400 px-8 py-3.5 font-black text-slate-950 disabled:opacity-60">{pending ? "Saving & Publishing…" : "Save & Publish Project →"}</button></form>
+      <ListingPublishGate><form action={action} className="flex justify-end"><input type="hidden" name="projectId" value={projectId} /><input type="hidden" name="editToken" value={editToken} /><button disabled={pending} className="rounded-full bg-amber-400 px-8 py-3.5 font-black text-slate-950 disabled:opacity-60">{pending ? "Saving & Publishing…" : "Save & Publish Project →"}</button></form></ListingPublishGate>
     </div>
   </section>;
 }

@@ -8,6 +8,55 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  passwordHash    String?   @map("password_hash")
+  emailVerifiedAt DateTime? @map("email_verified_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  sessions              AuthSession[]
+  otps                  EmailOtp[]
+  contractors           Contractor[]
+  projectTenders        ProjectTender[]
+  equipmentListings     Equipment[]
+  materialListings      Material[]
+  businessOpportunities BusinessOpportunity[]
+
+  @@map("users")
+}
+
+model AuthSession {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique @map("token_hash")
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("auth_sessions")
+}
+
+model EmailOtp {
+  id         String    @id @default(uuid())
+  userId     String    @map("user_id")
+  purpose    String
+  codeHash   String    @map("code_hash")
+  expiresAt  DateTime  @map("expires_at")
+  attempts   Int       @default(0)
+  consumedAt DateTime? @map("consumed_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose, createdAt])
+  @@map("email_otps")
+}
+
 model Category {
   id           String   @id @default(uuid())
   slug         String   @unique
@@ -122,8 +171,10 @@ model Contractor {
   responseTime      String?  @map("response_time")
   projectsCompleted Int?     @default(0) @map("projects_completed")
   createdAt         DateTime @default(now()) @map("created_at")
+  ownerId           String?  @map("owner_id")
 
   category Category @relation(fields: [categorySlug], references: [slug])
+  owner    User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
 
   contractorTypes  ContractorTypeLink[]
   countries        ContractorCountryLink[]
@@ -262,8 +313,10 @@ model ProjectTender {
   featured       Boolean  @default(false)
   imageUrls      String[] @default([]) @map("image_urls")
   createdAt      DateTime @default(now()) @map("created_at")
+  ownerId        String?  @map("owner_id")
 
   category Category @relation(fields: [categorySlug], references: [slug])
+  owner    User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
 
   projectTenderTypes ProjectTenderTypeLink[]
   countries          ProjectTenderCountryLink[]
@@ -363,12 +416,14 @@ model Equipment {
   images            String[]
   posted            String?
   createdAt         DateTime @default(now()) @map("created_at")
+  ownerId           String?  @map("owner_id")
 
   category      Category            @relation(fields: [categorySlug], references: [slug])
   equipmentType EquipmentType       @relation(fields: [equipmentTypeSlug], references: [slug])
   country       Country             @relation(fields: [countryCode], references: [code])
   city          City                @relation(fields: [citySlug], references: [slug])
   documents     EquipmentDocument[]
+  owner         User?               @relation(fields: [ownerId], references: [id], onDelete: SetNull)
 
   @@index([equipmentTypeSlug])
   @@index([listingType])
@@ -420,11 +475,13 @@ model Material {
   galleryImages    String[] @default([]) @map("gallery_images")
   posted           String?
   createdAt        DateTime @default(now()) @map("created_at")
+  ownerId          String?  @map("owner_id")
 
   category  Category           @relation(fields: [categorySlug], references: [slug])
   country   Country            @relation(fields: [countryCode], references: [code])
   city      City               @relation(fields: [citySlug], references: [slug])
   documents MaterialDocument[]
+  owner     User?              @relation(fields: [ownerId], references: [id], onDelete: SetNull)
 
   @@index([materialGroup])
   @@index([materialTypeSlug])
@@ -467,11 +524,13 @@ model BusinessOpportunity {
   galleryImages    String[] @default([]) @map("gallery_images")
   postedDate       String?  @map("posted_date")
   createdAt        DateTime @default(now()) @map("created_at")
+  ownerId          String?  @map("owner_id")
 
   category  Category                      @relation(fields: [categorySlug], references: [slug])
   country   Country                       @relation(fields: [countryCode], references: [code])
   city      City                          @relation(fields: [citySlug], references: [slug])
   documents BusinessOpportunityDocument[]
+  owner     User?                         @relation(fields: [ownerId], references: [id], onDelete: SetNull)
 
   @@index([section])
   @@index([businessCategory])
@@ -490,4 +549,62 @@ model BusinessOpportunityDocument {
   businessOpportunity BusinessOpportunity @relation(fields: [businessOpportunityId], references: [id], onDelete: Cascade)
 
   @@map("business_opportunity_documents")
+}
+
+model Rfq {
+  id                       String    @id @default(uuid())
+  reference                String    @unique
+  title                    String
+  projectName              String    @map("project_name")
+  materialService          String?   @map("material_service")
+  category                 String
+  status                   String    @default("draft")
+  country                  String
+  city                     String
+  address                  String?
+  quantity                 String
+  unit                     String?
+  specifications           String?
+  notes                    String?
+  budget                   String?
+  urgency                  String
+  deliveryDate             DateTime? @map("delivery_date")
+  expirationDate           DateTime  @map("expiration_date")
+  deliveryTerms            String    @map("delivery_terms")
+  description              String
+  phone                    String
+  email                    String
+  boqUrl                   String?   @map("boq_url")
+  drawingsUrl              String?   @map("drawings_url")
+  specificationDocumentUrl String?   @map("specification_document_url")
+  otherDocumentUrls        String[]  @default([]) @map("other_document_urls")
+  postedAt                 DateTime  @default(now()) @map("posted_at")
+  updatedAt                DateTime  @updatedAt @map("updated_at")
+
+  quotations VendorQuotation[]
+
+  @@index([status])
+  @@index([category])
+  @@index([expirationDate])
+  @@map("rfqs")
+}
+
+model VendorQuotation {
+  id                     String   @id @default(uuid())
+  rfqId                  String   @map("rfq_id")
+  vendorName             String   @map("vendor_name")
+  offerAmount            String   @map("offer_amount")
+  deliveryLeadtime       String   @map("delivery_leadtime")
+  technicalSpecification String   @map("technical_specification")
+  vendorNotes            String?  @map("vendor_notes")
+  pdfUrl                 String?  @map("pdf_url")
+  status                 String   @default("pending")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+
+  rfq Rfq @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+
+  @@index([rfqId])
+  @@index([status])
+  @@map("vendor_quotations")
 }
