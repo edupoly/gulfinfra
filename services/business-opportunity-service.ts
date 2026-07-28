@@ -18,6 +18,7 @@ const select = {
   phone: true,
   whatsapp: true,
   description: true,
+  featured: true,
   image: true,
 } as const;
 
@@ -25,7 +26,7 @@ function map(row: {
   slug: string; title: string; section: string; businessCategory: string;
   investment: string; countryCode: string; country: { name: string };
   city: { name: string }; postedDate: string | null; contact: string;
-  phone: string; whatsapp: string | null; description: string; image: string | null;
+  phone: string; whatsapp: string | null; description: string; featured: boolean; image: string | null;
 }): BusinessOpportunity {
   const section = ["Businesses for Sale", "Businesses Wanted", "Investment Opportunities"].includes(row.section)
     ? row.section as BusinessOpportunity["section"]
@@ -35,6 +36,7 @@ function map(row: {
     investment: row.investment, country: row.country.name, countryCode: row.countryCode,
     city: row.city.name, postedDate: row.postedDate ?? "", contact: row.contact,
     phone: row.phone, whatsapp: row.whatsapp ?? "", description: row.description,
+    featured: row.featured,
     image: row.image ?? "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab",
   };
 }
@@ -45,7 +47,7 @@ export async function getAllBusinessOpportunities(): Promise<BusinessOpportunity
     relationLoadStrategy: "join",
     where: { listingStatus: "published" },
     select,
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
   });
   return [...rows.map(map), ...businessOpportunities];
 }

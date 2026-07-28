@@ -57,6 +57,7 @@ export type ContractorProfile = {
   reviewCount: number;
   verified: boolean;
   premium: boolean;
+  featured: boolean;
   memberSince: string;
   responseTime: string;
   projectsCompleted: number;
@@ -148,6 +149,7 @@ export type MaterialProfile = {
   whatsapp: string;
   email: string;
   verified: boolean;
+  featured: boolean;
   image: string;
   posted: string;
 };
@@ -166,5 +168,6 @@ export type BusinessOpportunity = {
   phone: string;
   whatsapp: string;
   description: string;
+  featured: boolean;
   image: string;
 };

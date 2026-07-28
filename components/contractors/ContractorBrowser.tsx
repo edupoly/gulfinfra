@@ -8,6 +8,7 @@ const normalize = (value: string) => value.trim().toLowerCase();
 
 type Props = {
   initialSearch: string;
+  initialCountries?: string[];
   contractorTypes: Array<{ slug: string; name: string }>;
   countries: Array<{ code: string; name: string }>;
   cities: Array<{ slug: string; name: string; countryCode: string }>;
@@ -16,6 +17,7 @@ type Props = {
 
 export function ContractorBrowser({
   initialSearch,
+  initialCountries = [],
   contractorTypes,
   countries,
   cities,
@@ -23,7 +25,7 @@ export function ContractorBrowser({
 }: Props) {
   const [search, setSearch] = useState(initialSearch);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-  const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
+  const [selectedCountries, setSelectedCountries] = useState<string[]>(initialCountries);
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [minYearEstablished, setMinYearEstablished] = useState<number>(0);
 

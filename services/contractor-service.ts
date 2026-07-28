@@ -53,6 +53,7 @@ type ContractorRecord = {
   reviewCount?: number | null;
   verified: boolean;
   premium: boolean;
+  featured: boolean;
   memberSince?: string | null;
   responseTime?: string | null;
   projectsCompleted?: number | null;
@@ -111,6 +112,7 @@ const mapContractorRecord = (
   reviewCount: contractor.reviewCount ?? 0,
   verified: contractor.verified,
   premium: contractor.premium,
+  featured: contractor.featured,
   memberSince: contractor.memberSince ?? "",
   responseTime: contractor.responseTime ?? "",
   projectsCompleted: contractor.projectsCompleted ?? 0,
@@ -194,6 +196,7 @@ export async function getAllContractors(): Promise<ContractorProfile[]> {
       reviewCount: true,
       verified: true,
       premium: true,
+      featured: true,
       responseTime: true,
       projectsCompleted: true,
       createdAt: true,
@@ -212,7 +215,7 @@ export async function getAllContractors(): Promise<ContractorProfile[]> {
         },
       },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
   });
 
   return rows.map(mapContractorRecord);

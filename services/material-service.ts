@@ -20,7 +20,7 @@ const select = {
   city: { select: { name: true } }, supplier: true, priceRange: true,
   minimumOrder: true, availability: true, leadTime: true, compliance: true,
   description: true, specifications: true, phone: true, whatsapp: true,
-  email: true, verified: true, image: true, posted: true,
+  email: true, verified: true, featured: true, image: true, posted: true,
 } as const;
 
 type Row = Awaited<ReturnType<typeof prisma.material.findFirst>>;
@@ -56,7 +56,7 @@ export async function getMaterialFilters() {
 export async function getAllMaterials(): Promise<MaterialProfile[]> {
   if (!usePrisma) return materialListings;
   const rows = await prisma.material.findMany({
-    relationLoadStrategy: "join", where: { listingStatus: "published" }, select, orderBy: [{ verified: "desc" }, { createdAt: "desc" }],
+    relationLoadStrategy: "join", where: { listingStatus: "published" }, select, orderBy: [{ featured: "desc" }, { verified: "desc" }, { createdAt: "desc" }],
   });
   if (rows.length === 0) return materialListings;
   return rows.map((row) => map(row as Parameters<typeof map>[0]));

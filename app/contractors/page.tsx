@@ -2,8 +2,9 @@ import { ContractorBrowser } from "@/components/contractors/ContractorBrowser";
 import { DirectoryHero } from "@/components/directory/DirectoryHero";
 import { getAllContractors, getContractorFilters } from "@/services/contractor-service";
 
-export default async function ContractorsPage({ searchParams }: { searchParams: Promise<{ search?: string }> }) {
+export default async function ContractorsPage({ searchParams }: { searchParams: Promise<{ search?: string; countries?: string | string[] }> }) {
   const query = await searchParams;
+  const initialCountries = (Array.isArray(query.countries) ? query.countries : query.countries?.split(",")) ?? [];
   const [contractors, filters] = await Promise.all([
     getAllContractors(),
     getContractorFilters(),
@@ -15,6 +16,7 @@ export default async function ContractorsPage({ searchParams }: { searchParams: 
       <div className="mx-auto max-w-[1440px] px-6">
       <ContractorBrowser
         initialSearch={query.search ?? ""}
+        initialCountries={initialCountries}
         contractorTypes={filters.contractorTypes}
         countries={filters.countries}
         cities={filters.cities}

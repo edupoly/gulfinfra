@@ -1,11 +1,35 @@
 import Link from "next/link";
 import { categories } from "@/lib/mock-data";
+import {
+  FeaturedBusinessOpportunities,
+  FeaturedContractors,
+  FeaturedEquipment,
+  FeaturedMaterials,
+  LatestProjects,
+} from "@/components/home/HomeListingSections";
+import { GccCountries } from "@/components/home/GccCountries";
+import { GccMarketplaceOpportunities } from "@/components/home/GccMarketplaceOpportunities";
 import { HomeHero } from "@/components/home/HomeHero";
+import { WhyChooseGulfBuildHub } from "@/components/home/WhyChooseGulfBuildHub";
+import { getAllBusinessOpportunities } from "@/services/business-opportunity-service";
+import { getAllContractors } from "@/services/contractor-service";
+import { getAllEquipment } from "@/services/equipment-service";
+import { getAllMaterials } from "@/services/material-service";
+import { getAllProjectTenders } from "@/services/project-tender-service";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [contractors, projects, equipment, materials, opportunities] = await Promise.all([
+    getAllContractors(),
+    getAllProjectTenders(),
+    getAllEquipment(),
+    getAllMaterials(),
+    getAllBusinessOpportunities(),
+  ]);
+
   return (
     <main className="w-full">
       <HomeHero />
+      <GccCountries />
       <section id="categories" className="mx-auto max-w-7xl space-y-4 px-4 py-10 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           <div>
@@ -48,6 +72,13 @@ export default function HomePage() {
           })}
         </div>
       </section>
+      <FeaturedContractors listings={contractors} />
+      <LatestProjects listings={projects} />
+      <FeaturedEquipment listings={equipment} />
+      <FeaturedMaterials listings={materials} />
+      <FeaturedBusinessOpportunities listings={opportunities} />
+      <WhyChooseGulfBuildHub />
+      <GccMarketplaceOpportunities />
     </main>
   );
 }

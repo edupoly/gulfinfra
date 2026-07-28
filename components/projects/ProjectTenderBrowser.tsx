@@ -212,7 +212,7 @@ export function ProjectTenderBrowser({
                     href={`/projects-tenders/${project.slug}`}
                     className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
                   >
-                    View Opportunity
+                    View more
                   </Link>
                 </div>
               </div>

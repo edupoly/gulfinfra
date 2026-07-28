@@ -117,6 +117,7 @@ model Contractor {
   reviewCount       Int?     @default(0) @map("review_count")
   verified          Boolean  @default(false)
   premium           Boolean  @default(false)
+  featured          Boolean  @default(false)
   memberSince       String?  @map("member_since")
   responseTime      String?  @map("response_time")
   projectsCompleted Int?     @default(0) @map("projects_completed")
@@ -414,6 +415,7 @@ model Material {
   whatsapp         String?
   email            String?
   verified         Boolean  @default(false)
+  featured         Boolean  @default(false)
   image            String?
   galleryImages    String[] @default([]) @map("gallery_images")
   posted           String?
@@ -460,6 +462,7 @@ model BusinessOpportunity {
   phone            String
   whatsapp         String?
   description      String
+  featured         Boolean  @default(false)
   image            String?
   galleryImages    String[] @default([]) @map("gallery_images")
   postedDate       String?  @map("posted_date")
