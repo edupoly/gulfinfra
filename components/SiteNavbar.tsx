@@ -7,14 +7,14 @@ import { useState } from "react";
 const navigation = [
   { name: "Home", href: "/" },
   { name: "Search", href: "/search" },
-  { name: "About Us", href: "/about" },
-  { name: "Contact Us", href: "/contact" },
   { name: "Contractors", href: "/contractors" },
   { name: "Projects & Tenders", href: "/projects-tenders" },
   { name: "RFQs", href: "/rfqs" },
   { name: "Equipment Marketplace", href: "/equipment-marketplace" },
   { name: "Construction & Industrial Materials", href: "/construction-materials" },
   { name: "Business Opportunities", href: "/business-opportunities" },
+  { name: "About Us", href: "/about" },
+  { name: "Contact Us", href: "/contact" },
 ];
 
 export function SiteNavbar({
