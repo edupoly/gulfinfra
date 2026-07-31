@@ -1,5 +1,3 @@
-import Link from "next/link";
-import { categories } from "@/lib/mock-data";
 import {
   FeaturedBusinessOpportunities,
   FeaturedContractors,
@@ -8,6 +6,11 @@ import {
   FeaturedRfqs,
   LatestProjects,
 } from "@/components/home/HomeListingSections";
+import {
+  FeaturedSuppliers,
+  SuccessStories,
+  Testimonials,
+} from "@/components/home/HomeTrustSections";
 import { GccCountries } from "@/components/home/GccCountries";
 import { GccMarketplaceOpportunities } from "@/components/home/GccMarketplaceOpportunities";
 import { HomeHero } from "@/components/home/HomeHero";
@@ -81,6 +84,9 @@ export default async function HomePage() {
       <FeaturedMaterials listings={materials} />
       <FeaturedBusinessOpportunities listings={opportunities} />
       <FeaturedRfqs listings={rfqs} />
+      <FeaturedSuppliers materials={materials} />
+      <SuccessStories />
+      <Testimonials />
       <WhyChooseGulfBuildHub />
       <GccMarketplaceOpportunities />
     </main>

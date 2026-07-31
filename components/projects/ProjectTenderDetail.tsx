@@ -149,8 +149,14 @@ export function ProjectTenderDetail({
               official BOQ, drawings, qualification criteria, and submission process.
             </p>
             <Link
-              href="/contact"
+              href={`/projects-tenders/${project.slug}/apply`}
               className="mt-5 block rounded-full bg-amber-400 px-5 py-3 text-center text-sm font-black text-slate-950"
+            >
+              Apply for this project
+            </Link>
+            <Link
+              href="/contact"
+              className="mt-3 block rounded-full border border-white/20 px-5 py-3 text-center text-sm font-bold text-white"
             >
               Request tender documents
             </Link>

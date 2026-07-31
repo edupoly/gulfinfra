@@ -25,18 +25,20 @@ model User {
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
-  sessions              AuthSession[]
-  otps                  EmailOtp[]
-  contractors           Contractor[]
-  projectTenders        ProjectTender[]
-  equipmentListings     Equipment[]
-  materialListings      Material[]
-  businessOpportunities BusinessOpportunity[]
-  savedListings         SavedListing[]
-  rfqs                  Rfq[]                 @relation("RfqBuyer")
-  vendorQuotations      VendorQuotation[]     @relation("QuotationSupplier")
-  quotationMessages     QuotationMessage[]
-  quotationEvents       QuotationEvent[]
+  sessions                 AuthSession[]
+  otps                     EmailOtp[]
+  contractors              Contractor[]
+  projectTenders           ProjectTender[]
+  equipmentListings        Equipment[]
+  materialListings         Material[]
+  businessOpportunities    BusinessOpportunity[]
+  savedListings            SavedListing[]
+  rfqs                     Rfq[]                     @relation("RfqBuyer")
+  vendorQuotations         VendorQuotation[]         @relation("QuotationSupplier")
+  quotationMessages        QuotationMessage[]
+  quotationEvents          QuotationEvent[]
+  projectApplications      ProjectApplication[]      @relation("ProjectApplicant")
+  projectApplicationEvents ProjectApplicationEvent[]
 
   @@map("users")
 }
@@ -339,6 +341,7 @@ model ProjectTender {
   cities             ProjectTenderCityLink[]
   sectors            ProjectTenderSector[]
   documents          ProjectTenderDocument[]
+  applications       ProjectApplication[]
 
   @@map("project_tenders")
 }
@@ -398,6 +401,48 @@ model ProjectTenderDocument {
   projectTender ProjectTender @relation(fields: [projectTenderId], references: [id], onDelete: Cascade)
 
   @@map("project_tender_documents")
+}
+
+model ProjectApplication {
+  id                    String    @id @default(uuid())
+  projectTenderId       String    @map("project_tender_id")
+  applicantId           String    @map("applicant_id")
+  companyName           String    @map("company_name")
+  contactPerson         String    @map("contact_person")
+  contactEmail          String    @map("contact_email")
+  contactPhone          String    @map("contact_phone")
+  proposedRole          String    @map("proposed_role")
+  coverMessage          String    @map("cover_message")
+  supportingDocumentUrl String?   @map("supporting_document_url")
+  status                String    @default("submitted")
+  submittedAt           DateTime  @default(now()) @map("submitted_at")
+  withdrawnAt           DateTime? @map("withdrawn_at")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  projectTender ProjectTender             @relation(fields: [projectTenderId], references: [id], onDelete: Cascade)
+  applicant     User                      @relation("ProjectApplicant", fields: [applicantId], references: [id], onDelete: Cascade)
+  events        ProjectApplicationEvent[]
+
+  @@unique([projectTenderId, applicantId])
+  @@index([applicantId, status])
+  @@index([projectTenderId, status])
+  @@map("project_applications")
+}
+
+model ProjectApplicationEvent {
+  id            String   @id @default(uuid())
+  applicationId String   @map("application_id")
+  actorId       String?  @map("actor_id")
+  status        String
+  note          String?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  application ProjectApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  actor       User?              @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([applicationId, createdAt])
+  @@map("project_application_events")
 }
 
 model Equipment {

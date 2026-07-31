@@ -8,6 +8,8 @@ const items = [
   { label: "My listings", href: "#listings", icon: "▤" },
   { label: "My RFQs", href: "/my-rfqs", icon: "⌕" },
   { label: "My quotations", href: "/my-quotations", icon: "▧" },
+  { label: "My applications", href: "/my-applications", icon: "✓" },
+  { label: "Received applications", href: "/my-project-applications", icon: "◎" },
   { label: "Saved listings", href: "#saved-listings", icon: "★" },
   { label: "Messages", href: "/messages", icon: "✉" },
   { label: "Notifications", href: "/notifications", icon: "●" },
