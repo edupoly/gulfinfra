@@ -3,9 +3,10 @@ import type { ContractorProfile } from "@/lib/types";
 
 type Props = {
   contractor: ContractorProfile;
+  saveControl?: React.ReactNode;
 };
 
-export function ContractorDetail({ contractor }: Props) {
+export function ContractorDetail({ contractor, saveControl }: Props) {
   return (
     <div className="space-y-8 pb-8">
       <section className="relative left-1/2 w-dvw -translate-x-1/2 bg-gradient-to-br from-slate-950 to-slate-700 text-white shadow-xl">
@@ -13,6 +14,7 @@ export function ContractorDetail({ contractor }: Props) {
           <Link href="/contractors" className="mb-8 inline-flex text-sm font-semibold text-slate-300 transition hover:text-amber-300">
             ← Back to Contractors
           </Link>
+          {saveControl && <div className="mb-6">{saveControl}</div>}
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <span className="mb-3 inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold">
@@ -87,6 +89,24 @@ export function ContractorDetail({ contractor }: Props) {
               ))}
             </div>
           </div>
+
+          <section className="border-t border-slate-200 pt-6">
+            <h3 className="text-lg font-semibold text-slate-900">Featured Projects</h3>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {contractor.featuredProjects.map((project) => (
+                <article key={project.title} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <h4 className="font-semibold text-slate-900">{project.title}</h4>
+                  <p className="mt-1 text-sm text-slate-600">{project.location}</p>
+                  <p className="mt-2 text-xs font-semibold text-amber-800">{project.status}</p>
+                </article>
+              ))}
+              {!contractor.featuredProjects.length && (
+                <p className="text-sm text-slate-500 sm:col-span-2">
+                  Featured project information is available on request.
+                </p>
+              )}
+            </div>
+          </section>
         </div>
 
         <aside className="space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -109,22 +129,35 @@ export function ContractorDetail({ contractor }: Props) {
             </ul>
           </div>
 
-          <div>
-            <h3 className="text-lg font-semibold text-slate-900">Featured Projects</h3>
-            <div className="mt-3 space-y-3">
-              {contractor.featuredProjects.map((project) => (
-                <div key={project.title} className="rounded-2xl bg-slate-50 p-3">
-                  <div className="font-semibold text-slate-900">{project.title}</div>
-                  <div className="text-sm text-slate-600">{project.location}</div>
-                  <div className="text-xs font-semibold text-amber-800">{project.status}</div>
-                </div>
-              ))}
+          <div className="border-t border-slate-200 pt-6">
+            <h3 className="text-lg font-semibold text-slate-900">Contact this contractor</h3>
+            <div className="mt-4 space-y-3">
+              <Link
+                href="/contact"
+                className="block rounded-full bg-slate-900 px-5 py-3 text-center text-sm font-bold text-white"
+              >
+                Call {contractor.phone}
+              </Link>
+              <a
+                href={`https://wa.me/${contractor.whatsapp.replace(/\D/g, "")}`}
+                target="_blank"
+                rel="noreferrer"
+                className="block rounded-full bg-emerald-600 px-5 py-3 text-center text-sm font-bold text-white"
+              >
+                WhatsApp
+              </a>
+              <Link
+                href="/contact"
+                className="block rounded-full border border-slate-300 px-5 py-3 text-center text-sm font-bold text-slate-800"
+              >
+                Send Enquiry
+              </Link>
             </div>
           </div>
 
-          <Link href="/contractors" className="inline-flex rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
+          {/* <Link href="/contractors" className="inline-flex rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
             Back to Contractors
-          </Link>
+          </Link> */}
         </aside>
       </section>
     </div>

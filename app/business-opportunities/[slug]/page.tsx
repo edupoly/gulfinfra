@@ -2,6 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getBusinessOpportunityBySlug } from "@/services/business-opportunity-service";
+import { SaveListingButton } from "@/components/listings/SaveListingButton";
+import { getCurrentUser } from "@/lib/auth";
+import { isListingSaved } from "@/lib/saved-listings";
 
 export default async function BusinessOpportunityDetailsPage({
   params,
@@ -14,6 +17,8 @@ export default async function BusinessOpportunityDetailsPage({
   if (!item) {
     notFound();
   }
+  const user = await getCurrentUser();
+  const saved = await isListingSaved(user?.id, "business", slug);
 
   const referenceId = `BUS-${item.slug
     .split("")
@@ -39,6 +44,9 @@ export default async function BusinessOpportunityDetailsPage({
             >
               ← Back to Business Opportunities
             </Link>
+            <div className="mb-6">
+              <SaveListingButton listingType="business" listingSlug={slug} initialSaved={saved} />
+            </div>
             <p className="text-sm font-black uppercase tracking-[0.18em] text-amber-300">
               {item.section} · {item.category}
             </p>
@@ -97,18 +105,18 @@ export default async function BusinessOpportunityDetailsPage({
             <p className="mt-2 text-sm leading-6 text-slate-300">
               Request further information and arrange a confidential discussion.
             </p>
-            <a
-              href={`mailto:${item.contact}`}
+            <Link
+              href="/contact"
               className="mt-5 block rounded-full bg-amber-400 px-5 py-3 text-center font-bold text-slate-950"
             >
               Email contact
-            </a>
-            <a
-              href={`tel:${item.phone.replace(/\s/g, "")}`}
+            </Link>
+            <Link
+              href="/contact"
               className="mt-3 block rounded-full border border-white/20 px-5 py-3 text-center font-bold text-white"
             >
               Call {item.phone}
-            </a>
+            </Link>
             <a
               href={`https://wa.me/${item.whatsapp.replace(/\D/g, "")}`}
               className="mt-3 block rounded-full bg-emerald-600 px-5 py-3 text-center font-bold text-white"

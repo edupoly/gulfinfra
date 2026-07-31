@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { createHash, randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { getCurrentUser } from "@/lib/auth";
+import { BLOCKED_ACTIVITY_MESSAGE, getActivityRestriction, getCurrentUser } from "@/lib/auth";
 
 const materialTypes = new Map([
   ["cement-concrete", "Cement & Concrete"], ["structural-steel", "Structural Steel"],
@@ -34,6 +34,8 @@ const parseSpecs = (value: string) => value.split("\n").map((line) => line.trim(
 const slugify = (value: string) => `${value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 70) || "material"}-${crypto.randomUUID().slice(0, 8)}`;
 
 export async function saveMaterialDraft(_state: MaterialDraftState, data: FormData): Promise<MaterialDraftState> {
+  const restriction = await getActivityRestriction();
+  if (restriction) return { success: false, message: restriction };
   const values = {
     name: text(data, "name"), materialGroup: text(data, "materialGroup"),
     materialTypeSlug: text(data, "materialType"), listingType: text(data, "listingType"),
@@ -109,6 +111,8 @@ async function loadReview(id: string): Promise<MaterialReviewData | null> {
 }
 
 export async function saveMaterialMedia(_state: MaterialMediaState, data: FormData): Promise<MaterialMediaState> {
+  const restriction = await getActivityRestriction();
+  if (restriction) return { success: false, message: restriction };
   const materialId = text(data, "materialId"), editToken = text(data, "editToken"), image = text(data, "image");
   const galleryImages = data.getAll("galleryImages").map(String).map((item) => item.trim()).filter(Boolean);
   const names = data.getAll("documentNames").map(String), types = data.getAll("documentTypes").map(String), urls = data.getAll("documentUrls").map(String);
@@ -137,14 +141,15 @@ export async function saveMaterialMedia(_state: MaterialMediaState, data: FormDa
 export async function publishMaterial(_state: MaterialPublishState, data: FormData): Promise<MaterialPublishState> {
   const user = await getCurrentUser();
   if (!user) return { success: false, message: "Verify your email before publishing." };
+  if (user.blockedAt) return { success: false, message: BLOCKED_ACTIVITY_MESSAGE };
   const materialId = text(data, "materialId"), editToken = text(data, "editToken");
   const draft = await prisma.material.findFirst({ where: { id: materialId, listingStatus: "draft", draftTokenHash: hash(editToken) }, select: { id: true, slug: true } });
   if (!draft) return { success: false, message: "This material draft could not be verified." };
   try {
-    await prisma.material.update({ where: { id: draft.id }, data: { listingStatus: "published", draftTokenHash: null, ownerId: user.id, posted: new Date().toLocaleDateString("en-GB") } });
+    await prisma.material.update({ where: { id: draft.id }, data: { listingStatus: "pending", draftTokenHash: null, ownerId: user.id, posted: new Date().toLocaleDateString("en-GB") } });
     revalidatePath("/construction-materials");
     revalidatePath(`/construction-materials/${draft.slug}`);
-    return { success: true, message: "Your material listing has been published.", slug: draft.slug };
+    return { success: true, message: "Your material listing was submitted for admin approval.", slug: draft.slug };
   } catch (error) {
     console.error("Unable to publish material", error);
     return { success: false, message: "We could not publish the material. Your draft remains saved." };

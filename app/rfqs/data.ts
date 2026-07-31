@@ -31,7 +31,7 @@ export async function ensureSampleRfqs() {
           technicalSpecification: "Premium MC-30 Liquid Bitumen. 200L drums.",
           vendorNotes:
             "Temperature controlled shipping container. Delivery to Salwa site.",
-          status: "pending",
+          status: "submitted",
         },
       },
       },
@@ -91,7 +91,7 @@ export async function ensureSampleRfqs() {
         "MC-30 cutback bitumen supplied in sealed 200L drums with batch certificates.",
       vendorNotes:
         "Price includes delivery, unloading and third-party laboratory documentation.",
-      status: "pending",
+      status: "submitted",
     },
     {
       rfqReference: "RFQ-0003",
@@ -102,7 +102,7 @@ export async function ensureSampleRfqs() {
         "QCS-compliant MC-30 road primer supplied by temperature-controlled tankers.",
       vendorNotes:
         "Two scheduled deliveries are proposed to match the paving programme.",
-      status: "pending",
+      status: "submitted",
     },
     {
       rfqReference: "RFQ-0002",
@@ -113,7 +113,7 @@ export async function ensureSampleRfqs() {
         "Six 2023 crawler excavators, 35-ton operating weight, supplied with operators.",
       vendorNotes:
         "Monthly preventive maintenance and one standby replacement unit included.",
-      status: "pending",
+      status: "submitted",
     },
     {
       rfqReference: "RFQ-0002",
@@ -124,7 +124,7 @@ export async function ensureSampleRfqs() {
         "Six low-hour excavators with hydraulic breakers, GPS tracking and certified operators.",
       vendorNotes:
         "Mobilization and demobilization are included. Fuel is excluded.",
-      status: "pending",
+      status: "submitted",
     },
     {
       rfqReference: "RFQ-0002",
@@ -135,7 +135,7 @@ export async function ensureSampleRfqs() {
         "Mixed Caterpillar and Komatsu fleet with full service history and insurance.",
       vendorNotes:
         "Offer includes 24-hour breakdown support throughout the rental period.",
-      status: "declined",
+      status: "rejected",
     },
     {
       rfqReference: "RFQ-0001",
@@ -146,7 +146,7 @@ export async function ensureSampleRfqs() {
         "Twelve anti-collision systems with load indicators, zoning and remote monitoring.",
       vendorNotes:
         "Installation, calibration, operator training and two-year warranty included.",
-      status: "accepted",
+      status: "awarded",
     },
     {
       rfqReference: "RFQ-0001",
@@ -157,7 +157,7 @@ export async function ensureSampleRfqs() {
         "Wireless tower-crane safety suite compliant with EN 14439 requirements.",
       vendorNotes:
         "Includes commissioning reports and annual cloud-monitoring subscription.",
-      status: "declined",
+      status: "rejected",
     },
     {
       rfqReference: "RFQ-0003",
@@ -168,7 +168,7 @@ export async function ensureSampleRfqs() {
         "Locally stocked MC-30 cutback bitumen supplied in certified bulk tankers.",
       vendorNotes:
         "Offer includes staged site delivery, compliance certificates and unloading supervision.",
-      status: "pending",
+      status: "submitted",
     },
     {
       rfqReference: "RFQ-0002",
@@ -179,7 +179,7 @@ export async function ensureSampleRfqs() {
         "Six 35-ton excavators with operators, telematics and scheduled on-site servicing.",
       vendorNotes:
         "Standby equipment can be mobilized within 24 hours in case of breakdown.",
-      status: "pending",
+      status: "submitted",
     },
     {
       rfqReference: "RFQ-0001",
@@ -190,7 +190,7 @@ export async function ensureSampleRfqs() {
         "Integrated anti-collision, load-moment and wind-speed monitoring package for twelve cranes.",
       vendorNotes:
         "Includes installation, multilingual operator training and 18 months of technical support.",
-      status: "declined",
+      status: "rejected",
     },
   ];
 
@@ -224,10 +224,10 @@ export async function ensureSampleRfqs() {
 export async function getRfqs() {
   await ensureSampleRfqs();
   return prisma.rfq.findMany({
+    where: { status: "published", expirationDate: { gt: new Date() } },
     include: {
-      quotations: {
-        orderBy: { createdAt: "asc" },
-      },
+      quotations: { select: { id: true } },
+      _count: { select: { quotations: true } },
     },
     orderBy: { postedAt: "desc" },
   });

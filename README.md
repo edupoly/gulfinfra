@@ -4,9 +4,13 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 Authentication uses email OTPs, an HTTP-only database-backed session, and a
 password created after the first successful verification. Configure
-`RESEND_API_KEY` and `AUTH_EMAIL_FROM` as shown in `.env.example` to deliver
-codes by email. In non-production environments without those values, the OTP
-is printed to the server console and displayed in the verification panel.
+`GMAIL_USER`, `GMAIL_APP_PASSWORD`, and `AUTH_EMAIL_FROM` as shown in
+`.env.example` to deliver codes through Gmail SMTP. The Gmail account must have
+2-Step Verification enabled and use a Google App Password, not its normal
+password. In non-production environments without those values, the OTP is
+printed to the server console and displayed in the verification panel.
+Set `APP_URL` to the public site origin in production so password-reset emails
+always contain the correct link.
 
 ## Getting Started
 

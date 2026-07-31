@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { logout } from "@/app/auth/actions";
 
 const navigation = [
   { name: "Home", href: "/" },
+  { name: "Search", href: "/search" },
+  { name: "About Us", href: "/about" },
+  { name: "Contact Us", href: "/contact" },
   { name: "Contractors", href: "/contractors" },
   { name: "Projects & Tenders", href: "/projects-tenders" },
   { name: "RFQs", href: "/rfqs" },
@@ -15,7 +17,13 @@ const navigation = [
   { name: "Business Opportunities", href: "/business-opportunities" },
 ];
 
-export function SiteNavbar({ userEmail }: { userEmail: string | null }) {
+export function SiteNavbar({
+  userEmail,
+  userRole,
+}: {
+  userEmail: string | null;
+  userRole: string | null;
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -40,7 +48,7 @@ export function SiteNavbar({ userEmail }: { userEmail: string | null }) {
 
         <div className={`${open ? "flex" : "hidden"} absolute left-0 right-0 top-full max-h-[calc(100vh-100px)] flex-col overflow-y-auto border-t border-white/10 bg-[#0b1f3a] px-6 py-6 shadow-xl xl:static xl:flex xl:max-h-none xl:flex-row xl:items-center xl:gap-5 xl:overflow-visible xl:border-0 xl:bg-transparent xl:p-0 xl:shadow-none`}>
           <nav aria-label="Primary navigation">
-            <ul className="flex flex-col gap-1 xl:flex-row xl:items-center xl:gap-4">
+            <ul className="flex flex-col gap-1 xl:flex-row xl:items-center xl:gap-3">
               {navigation.map((item) => {
                 const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
                 return <li key={item.href}><Link href={item.href} onClick={() => setOpen(false)} aria-current={active ? "page" : undefined} className={`relative block py-2 text-sm font-bold transition hover:text-amber-300 xl:max-w-32 xl:py-1 xl:text-center xl:text-[0.78rem] ${active ? "text-white after:absolute after:inset-x-0 after:-bottom-1 after:h-0.5 after:bg-amber-400" : "text-white/90"}`}>{item.name}</Link></li>;
@@ -50,9 +58,9 @@ export function SiteNavbar({ userEmail }: { userEmail: string | null }) {
           <div className="mt-5 flex flex-col items-start gap-2 border-t border-white/10 pt-5 xl:mt-0 xl:items-end xl:border-0 xl:pt-0">
             {userEmail ? (
               <div className="flex items-center gap-2 text-xs font-bold text-white/90">
-                <Link href="/my-listings" onClick={() => setOpen(false)}>My Listings</Link>
-                <span className="text-white/25">|</span>
-                <form action={logout}><button type="submit">Logout</button></form>
+                <Link href={userRole === "admin" ? "/admin" : "/my-listings"} onClick={() => setOpen(false)}>
+                  {userRole === "admin" ? "Admin Dashboard" : "Dashboard"}
+                </Link>
               </div>
             ) : (
               <Link href="/login" onClick={() => setOpen(false)} className="text-xs font-bold text-white/90">♙ Login / Register</Link>

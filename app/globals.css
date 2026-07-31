@@ -46,3 +46,19 @@ html {
   scroll-behavior: smooth;
   scroll-padding-top: 6.25rem;
 }
+
+.search-field {
+  margin-top: 0.5rem;
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.75rem;
+  background: #fff;
+  padding: 0.75rem 1rem;
+  color: #0f172a;
+  outline: none;
+}
+
+.search-field:focus {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 2px #fef3c7;
+}

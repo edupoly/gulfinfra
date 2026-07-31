@@ -13,7 +13,7 @@ const equipmentImages: Record<string, string> = {
     "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=1400&q=85",
 };
 
-export function EquipmentDetail({ equipment }: { equipment: EquipmentProfile }) {
+export function EquipmentDetail({ equipment, saveControl }: { equipment: EquipmentProfile; saveControl?: React.ReactNode }) {
   const heroImage =
     equipment.images[0] ??
     equipmentImages[equipment.equipmentTypeSlug] ??
@@ -34,6 +34,7 @@ export function EquipmentDetail({ equipment }: { equipment: EquipmentProfile }) 
           >
             ← Back to Equipment Marketplace
           </Link>
+          {saveControl && <div className="mb-6">{saveControl}</div>}
           <div className="grid overflow-hidden rounded-3xl border border-white/10 bg-white/5 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="relative min-h-80 overflow-hidden bg-slate-800">
             <Image
@@ -202,12 +203,12 @@ export function EquipmentDetail({ equipment }: { equipment: EquipmentProfile }) 
             </div>
           </dl>
 
-          <a
-            href={`tel:${equipment.phone.replace(/\s/g, "")}`}
+          <Link
+            href="/contact"
             className="block rounded-full bg-slate-950 px-5 py-3 text-center text-sm font-bold text-white"
           >
             Call {equipment.phone}
-          </a>
+          </Link>
           {equipment.whatsapp && (
             <a
               href={`https://wa.me/${equipment.whatsapp.replace(/\D/g, "")}`}
@@ -217,12 +218,12 @@ export function EquipmentDetail({ equipment }: { equipment: EquipmentProfile }) 
             </a>
           )}
           {equipment.email && (
-            <a
-              href={`mailto:${equipment.email}`}
+            <Link
+              href="/contact"
               className="block rounded-full border border-slate-300 px-5 py-3 text-center text-sm font-bold text-slate-800"
             >
               Send enquiry
-            </a>
+            </Link>
           )}
         </aside>
       </div>

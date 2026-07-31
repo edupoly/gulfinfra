@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { BLOCKED_ACTIVITY_MESSAGE, getCurrentUser, normalizeEmail } from "@/lib/auth";
 
 export type RfqActionState = {
   success: boolean;
@@ -79,6 +80,25 @@ export async function saveRfq(
     return { success: false, message: "Please correct the highlighted fields.", errors };
   }
 
+  const currentUser = await getCurrentUser();
+  if (!currentUser) {
+    return { success: false, message: "Sign in before creating or editing an RFQ." };
+  }
+  if (currentUser?.blockedAt) {
+    return { success: false, message: BLOCKED_ACTIVITY_MESSAGE };
+  }
+  if (
+    !id &&
+    (!currentUser?.emailVerifiedAt ||
+      normalizeEmail(currentUser.email) !== normalizeEmail(values.email))
+  ) {
+    return {
+      success: false,
+      message: "Verify the RFQ email with a one-time code before creating it.",
+      errors: { email: "This email has not been verified for this RFQ." },
+    };
+  }
+
   const dataToSave = {
     title: values.materialService,
     projectName: values.projectName,
@@ -108,46 +128,95 @@ export async function saveRfq(
 
   try {
     if (id) {
+      const owned = await prisma.rfq.findFirst({
+        where: { id, buyerId: currentUser.id },
+        select: { id: true, status: true },
+      });
+      if (!owned) return { success: false, message: "You cannot edit this RFQ." };
+      if (owned.status === "awarded" || owned.status === "cancelled") {
+        return { success: false, message: "Awarded or cancelled RFQs cannot be edited." };
+      }
       await prisma.rfq.update({ where: { id }, data: dataToSave });
     } else {
-      const sequence = (await prisma.rfq.count()) + 1;
-      await prisma.rfq.create({
-        data: {
-          ...dataToSave,
-          reference: `RFQ-${String(sequence).padStart(4, "0")}`,
-        },
+      await prisma.$transaction(async (tx) => {
+        const authorization = await tx.emailOtp.findFirst({
+          where: {
+            userId: currentUser.id,
+            purpose: "rfq_create",
+            consumedAt: { not: null },
+            usedAt: null,
+            expiresAt: { gt: new Date() },
+          },
+          orderBy: { consumedAt: "desc" },
+        });
+        if (!authorization) throw new Error("RFQ_OTP_REQUIRED");
+
+        const claimed = await tx.emailOtp.updateMany({
+          where: { id: authorization.id, usedAt: null },
+          data: { usedAt: new Date() },
+        });
+        if (claimed.count !== 1) throw new Error("RFQ_OTP_REQUIRED");
+
+        const sequence = (await tx.rfq.count()) + 1;
+        await tx.rfq.create({
+          data: {
+            ...dataToSave,
+            reference: `RFQ-${String(sequence).padStart(4, "0")}`,
+            buyerId: currentUser.id,
+          },
+        });
       });
     }
     revalidatePath("/rfqs");
+    revalidatePath("/my-rfqs");
     return {
       success: true,
       message: id ? "RFQ updated successfully." : "RFQ created successfully.",
     };
   } catch (error) {
+    if (error instanceof Error && error.message === "RFQ_OTP_REQUIRED") {
+      return {
+        success: false,
+        message: "Your RFQ verification expired or was already used. Request a new code.",
+      };
+    }
     console.error("Unable to save RFQ", error);
     return { success: false, message: "The RFQ could not be saved. Please try again." };
   }
 }
 
 export async function setRfqStatus(id: string, status: "published" | "closed") {
-  await prisma.rfq.update({ where: { id }, data: { status } });
+  const user = await getCurrentUser();
+  if (!user || user.blockedAt) return;
+  await prisma.rfq.updateMany({
+    where: { id, buyerId: user.id, status: { notIn: ["awarded", "cancelled"] } },
+    data: { status },
+  });
   revalidatePath("/rfqs");
+  revalidatePath("/my-rfqs");
 }
 
 export async function setQuotationStatus(
   id: string,
   status: "accepted" | "declined",
 ) {
-  const quotation = await prisma.vendorQuotation.update({
-    where: { id },
-    data: { status },
-    select: { rfqId: true },
+  const user = await getCurrentUser();
+  if (!user || user.blockedAt) return;
+  const quotation = await prisma.vendorQuotation.findFirst({
+    where: { id, rfq: { buyerId: user.id } },
+    select: { id: true, rfqId: true },
   });
+  if (!quotation) return;
+  const nextStatus = status === "accepted" ? "awarded" : "rejected";
+  await prisma.vendorQuotation.update({ where: { id }, data: { status: nextStatus } });
   if (status === "accepted") {
     await prisma.vendorQuotation.updateMany({
-      where: { rfqId: quotation.rfqId, id: { not: id }, status: "pending" },
-      data: { status: "declined" },
+      where: { rfqId: quotation.rfqId, id: { not: id }, status: { in: ["submitted", "under_review", "shortlisted"] } },
+      data: { status: "rejected" },
     });
+    await prisma.rfq.update({ where: { id: quotation.rfqId }, data: { status: "awarded", awardedAt: new Date() } });
   }
   revalidatePath("/rfqs");
+  revalidatePath("/my-rfqs");
+  revalidatePath("/my-quotations");
 }

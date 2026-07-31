@@ -2,7 +2,9 @@
 
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { saveRfq, type RfqActionState } from "@/app/rfqs/actions";
+import { EmailAuthFlow } from "@/components/auth/EmailAuthFlow";
 
 export type RfqRecord = {
   id: string;
@@ -32,16 +34,7 @@ export type RfqRecord = {
   specificationDocumentUrl: string | null;
   otherDocumentUrls: string[];
   postedAt: string;
-  quotations: Array<{
-    id: string;
-    vendorName: string;
-    offerAmount: string;
-    deliveryLeadtime: string;
-    technicalSpecification: string;
-    vendorNotes: string | null;
-    pdfUrl: string | null;
-    status: string;
-  }>;
+  quotationCount: number;
 };
 
 const categories = ["Materials Sourcing", "Equipment Rentals", "Equipment Purchases"];
@@ -72,7 +65,19 @@ const newRfqDefaults = {
     "https://example.com/documents/commercial-terms.pdf\nhttps://example.com/documents/delivery-schedule.pdf",
 };
 
-export function RfqWorkspace({ rfqs }: { rfqs: RfqRecord[] }) {
+export function RfqWorkspace({
+  rfqs,
+  signedInEmail,
+  initialCreate,
+  initialRfqId,
+  initialEditRfqId,
+}: {
+  rfqs: RfqRecord[];
+  signedInEmail: string | null;
+  initialCreate: boolean;
+  initialRfqId: string | null;
+  initialEditRfqId: string | null;
+}) {
   const router = useRouter();
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [category, setCategory] = useState("All Categories");
@@ -80,8 +85,12 @@ export function RfqWorkspace({ rfqs }: { rfqs: RfqRecord[] }) {
   const [city, setCity] = useState("All Cities");
   const [closingDate, setClosingDate] = useState("");
   const [query, setQuery] = useState("");
-  const [formRfq, setFormRfq] = useState<RfqRecord | null | undefined>(undefined);
-  const [detailsRfq, setDetailsRfq] = useState<RfqRecord | null>(null);
+  const [formRfq, setFormRfq] = useState<RfqRecord | null | undefined>(
+    initialCreate ? null : initialEditRfqId ? rfqs.find((rfq) => rfq.id === initialEditRfqId) : undefined,
+  );
+  const [detailsRfq, setDetailsRfq] = useState<RfqRecord | null>(
+    () => rfqs.find((rfq) => rfq.id === initialRfqId) ?? null,
+  );
 
   const countries = useMemo(
     () => [...new Set(rfqs.map((rfq) => rfq.country))].sort(),
@@ -160,7 +169,7 @@ export function RfqWorkspace({ rfqs }: { rfqs: RfqRecord[] }) {
                 Requests for Quotation
               </h1>
               <p className="mt-4 max-w-2xl text-lg text-slate-300">
-                Create RFQs, track sourcing deadlines, and review vendor offers from one place.
+              Browse active GCC procurement opportunities and submit competitive quotations.
               </p>
             </div>
             <button
@@ -177,7 +186,7 @@ export function RfqWorkspace({ rfqs }: { rfqs: RfqRecord[] }) {
       <main className="mx-auto w-full max-w-[1440px] px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-xl font-black text-[#0b1f3a]">My RFQs</h2>
+            <h2 className="text-xl font-black text-[#0b1f3a]">Available RFQs</h2>
             <p className="text-sm text-slate-500">
               {filtered.length} of {rfqs.length} requests shown
             </p>
@@ -333,6 +342,7 @@ export function RfqWorkspace({ rfqs }: { rfqs: RfqRecord[] }) {
       {formRfq !== undefined && (
         <RfqFormModal
           rfq={formRfq}
+          signedInEmail={signedInEmail}
           onClose={() => setFormRfq(undefined)}
           onSaved={() => {
             setFormRfq(undefined);
@@ -404,20 +414,17 @@ function RfqCard({
           <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
             <span>Posted {formatDate(rfq.postedAt)}</span>
             <span className="rounded-full bg-blue-50 px-3 py-1 font-bold text-blue-700">
-              🗎 {rfq.quotations.length} {rfq.quotations.length === 1 ? "Bid" : "Bids"}
+              🗎 {rfq.quotationCount} {rfq.quotationCount === 1 ? "Bid" : "Bids"}
             </span>
           </div>
           <p className="mt-4 text-[0.68rem] font-black uppercase tracking-wide text-slate-400">
             Delivery terms
           </p>
           <p className="mt-1 line-clamp-2 text-sm font-bold text-[#0b1f3a]">{rfq.deliveryTerms}</p>
-          <button
-            type="button"
-            onClick={onDetails}
-            className="mt-5 w-full rounded-xl bg-[#0b1f3a] px-4 py-2.5 text-sm font-black text-white"
-          >
-            More Details →
-          </button>
+          <div className="mt-5 grid grid-cols-2 gap-2">
+            <button type="button" onClick={onDetails} className="rounded-xl border border-slate-300 px-3 py-2.5 text-sm font-black text-[#0b1f3a]">Details</button>
+            <Link href={`/rfqs/${rfq.id}`} className="rounded-xl bg-[#0b1f3a] px-3 py-2.5 text-center text-sm font-black text-white">View / Quote →</Link>
+          </div>
         </div>
       </div>
     </article>
@@ -426,15 +433,23 @@ function RfqCard({
 
 function RfqFormModal({
   rfq,
+  signedInEmail,
   onClose,
   onSaved,
 }: {
   rfq: RfqRecord | null;
+  signedInEmail: string | null;
   onClose: () => void;
   onSaved: () => void;
 }) {
   const [step, setStep] = useState(1);
   const [review, setReview] = useState<Record<string, string>>({});
+  const [contactEmail, setContactEmail] = useState(
+    rfq?.email || signedInEmail || newRfqDefaults.email,
+  );
+  const [verifiedEmail, setVerifiedEmail] = useState<string | null>(
+    rfq ? rfq.email : null,
+  );
   const formRef = useRef<HTMLFormElement>(null);
   const [state, action, pending] = useActionState(saveRfq, {
     success: false,
@@ -464,7 +479,7 @@ function RfqFormModal({
           ))}
         </ol>
 
-        <form ref={formRef} action={action}>
+        <form id="rfq-form" ref={formRef} action={action}>
           {rfq && <input type="hidden" name="id" value={rfq.id} />}
           <div className={step === 1 ? "block" : "hidden"}>
             <div className="mb-7 text-center">
@@ -536,7 +551,17 @@ function RfqFormModal({
                 <input name="phone" type="tel" required defaultValue={rfq?.phone || newRfqDefaults.phone} placeholder="+966 50 XXX XXXX" className={field} />
               </Field>
               <Field label="Procurement Email" error={state.errors?.email}>
-                <input name="email" type="email" required defaultValue={rfq?.email || newRfqDefaults.email} placeholder="procurement@company.com" className={field} />
+                <input
+                  name="email"
+                  type="email"
+                  required
+                  value={contactEmail}
+                  onChange={(event) => setContactEmail(event.target.value)}
+                  readOnly={!rfq && Boolean(signedInEmail)}
+                  placeholder="procurement@company.com"
+                  className={`${field} ${!rfq && signedInEmail ? "bg-slate-100 text-slate-600" : ""}`}
+                />
+                {!rfq && signedInEmail && <p className="mt-1 text-xs text-slate-500">Using your signed-in account email.</p>}
               </Field>
             </div>
             <div className="mt-8 flex flex-col-reverse justify-between gap-3 border-t border-slate-200 pt-6 sm:flex-row">
@@ -582,8 +607,9 @@ function RfqFormModal({
               </button>
             </div>
           </div>
+        </form>
 
-          <div className={step === 4 ? "block" : "hidden"}>
+        <div className={step === 4 ? "block" : "hidden"}>
             <div className="mb-7 text-center">
               <p className="text-sm font-black uppercase tracking-[0.18em] text-amber-600">Step 4 of 4</p>
               <h2 className="mt-2 text-3xl font-black text-[#0b1f3a]">Review & Publish</h2>
@@ -607,17 +633,29 @@ function RfqFormModal({
             {state.message && !state.success && (
               <p role="alert" className="mt-5 rounded-xl bg-red-50 p-3 text-center text-sm font-bold text-red-700">{state.message}</p>
             )}
+            {!rfq && !verifiedEmail && (
+              <div className="mt-6">
+                <EmailAuthFlow
+                  defaultEmail={contactEmail}
+                  requireOtp
+                  purpose="rfq_create"
+                  lockEmail
+                  onAuthenticated={setVerifiedEmail}
+                />
+              </div>
+            )}
             <div className="mt-8 flex flex-col-reverse justify-between gap-3 border-t border-slate-200 pt-6 sm:flex-row">
               <button type="button" onClick={() => setStep(3)} className="rounded-xl border border-slate-300 px-6 py-3 font-bold">← Back</button>
-              <div className="flex gap-3">
-                <button name="intent" value="draft" disabled={pending} className="rounded-xl border border-slate-300 px-6 py-3 font-bold text-slate-700">Save Draft</button>
-                <button name="intent" value="published" disabled={pending} className="rounded-xl bg-amber-400 px-6 py-3 font-black text-slate-950">
-                  {pending ? "Saving…" : rfq ? "Update & Publish" : "Publish RFQ"}
-                </button>
-              </div>
+              {(rfq || verifiedEmail) && (
+                <div className="flex gap-3">
+                  <button form="rfq-form" name="intent" value="draft" disabled={pending} className="rounded-xl border border-slate-300 px-6 py-3 font-bold text-slate-700">Save Draft</button>
+                  <button form="rfq-form" name="intent" value="published" disabled={pending} className="rounded-xl bg-amber-400 px-6 py-3 font-black text-slate-950">
+                    {pending ? "Saving…" : rfq ? "Update & Publish" : "Publish RFQ"}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
-        </form>
       </div>
     </ModalShell>
   );
@@ -714,12 +752,12 @@ function RfqDetailsModal({
           <section className="rounded-2xl bg-[#0b1f3a] p-5 text-white">
             <h3 className="text-lg font-black !text-white">Procurement Contact</h3>
             <div className="mt-3 flex flex-col gap-2 text-sm sm:flex-row sm:gap-6">
-              <a href={`tel:${rfq.phone.replace(/\s/g, "")}`} className="font-bold text-white">
+              <Link href="/contact" className="font-bold text-white">
                 ☎ {rfq.phone}
-              </a>
-              <a href={`mailto:${rfq.email}`} className="font-bold text-white">
+              </Link>
+              <Link href="/contact" className="font-bold text-white">
                 ✉ {rfq.email}
-              </a>
+              </Link>
             </div>
           </section>
         </div>

@@ -30,11 +30,11 @@ export function ContractorReview({
         <Progress activeStep={4} complete />
         <div className="mx-auto mt-16 max-w-2xl rounded-3xl border border-emerald-200 bg-emerald-50 px-6 py-12 text-center">
           <div className="mx-auto grid size-16 place-items-center rounded-full bg-emerald-600 text-3xl font-black text-white">✓</div>
-          <p className="mt-6 text-sm font-black uppercase tracking-[0.2em] text-emerald-700">Listing published</p>
-          <h1 className="mt-3 text-3xl font-black tracking-tight text-[#0b1f3a] sm:text-4xl">Your contractor profile is live</h1>
+          <p className="mt-6 text-sm font-black uppercase tracking-[0.2em] text-emerald-700">Submitted for review</p>
+          <h1 className="mt-3 text-3xl font-black tracking-tight text-[#0b1f3a] sm:text-4xl">Your listing is awaiting approval</h1>
           <p className="mt-4 text-lg text-slate-600">{state.message}</p>
-          <Link href={`/contractors/${state.slug}`} className="mt-7 inline-flex rounded-full bg-[#0b1f3a] px-7 py-3 font-black text-white hover:bg-slate-700">
-            View contractor profile →
+          <Link href="/my-listings" className="mt-7 inline-flex rounded-full bg-[#0b1f3a] px-7 py-3 font-black text-white hover:bg-slate-700">
+            View my listings →
           </Link>
         </div>
       </section>

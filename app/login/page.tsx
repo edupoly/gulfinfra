@@ -6,7 +6,8 @@ import { getCurrentUser } from "@/lib/auth";
 export const metadata: Metadata = { title: "Login | GulfInfraHub" };
 
 export default async function LoginPage() {
-  if (await getCurrentUser()) redirect("/my-listings");
+  const user = await getCurrentUser();
+  if (user) redirect(user.role === "admin" ? "/admin" : "/my-listings");
   return (
     <main className="grid min-h-[calc(100vh-100px)] place-items-center bg-slate-50 px-4 py-12">
       <section className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-xl sm:p-9">

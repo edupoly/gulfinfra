@@ -4,12 +4,16 @@ import {
   getAllEquipment,
   getEquipmentFilters,
 } from "@/services/equipment-service";
+import { getCurrentUser } from "@/lib/auth";
+import { getSavedListingSlugs } from "@/lib/saved-listings";
 
 export default async function EquipmentMarketplacePage({ searchParams }: { searchParams: Promise<{ search?: string }> }) {
   const query = await searchParams;
-  const [equipment, filters] = await Promise.all([
+  const user = await getCurrentUser();
+  const [equipment, filters, savedSlugs] = await Promise.all([
     getAllEquipment(),
     getEquipmentFilters(),
+    getSavedListingSlugs(user?.id, "equipment"),
   ]);
 
   return (
@@ -21,6 +25,7 @@ export default async function EquipmentMarketplacePage({ searchParams }: { searc
         equipment={equipment}
         equipmentTypes={filters.equipmentTypes}
         countries={filters.countries}
+        savedSlugs={savedSlugs}
       />
       </div>
     </main>

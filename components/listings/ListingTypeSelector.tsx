@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { ContractorListingForm } from "@/components/listings/ContractorListingForm";
 import { ProjectListingForm } from "@/components/listings/ProjectListingForm";
 import { EquipmentListingForm } from "@/components/listings/EquipmentListingForm";
@@ -63,6 +64,7 @@ export function ListingTypeSelector({
   countries: Array<{ code: string; name: string }>;
   cities: Array<{ slug: string; name: string; countryCode: string }>;
 }) {
+  const router = useRouter();
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [activeForm, setActiveForm] = useState<"contractors" | "projects" | "equipment" | "materials" | "business" | null>(null);
 
@@ -189,6 +191,10 @@ export function ListingTypeSelector({
               aria-checked={selected}
               onClick={() => {
                 setSelectedType(listingType.id);
+                if (listingType.id === "rfq") {
+                  router.push("/rfqs?create=1");
+                  return;
+                }
                 if (["contractors", "projects", "equipment", "materials", "business"].includes(listingType.id)) {
                   setActiveForm(listingType.id as "contractors" | "projects" | "equipment" | "materials" | "business");
                 }

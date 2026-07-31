@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { createHash, randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { getCurrentUser } from "@/lib/auth";
+import { BLOCKED_ACTIVITY_MESSAGE, getActivityRestriction, getCurrentUser } from "@/lib/auth";
 
 export type BusinessDraftState = { success: boolean; message: string; opportunityId?: string; editToken?: string; errors?: Record<string, string> };
 export type BusinessReviewData = {
@@ -21,6 +21,8 @@ const isUrl = (value: string) => { try { return ["http:", "https:"].includes(new
 const slugify = (value: string) => `${value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 70) || "opportunity"}-${crypto.randomUUID().slice(0, 8)}`;
 
 export async function saveBusinessDraft(_state: BusinessDraftState, data: FormData): Promise<BusinessDraftState> {
+  const restriction = await getActivityRestriction();
+  if (restriction) return { success: false, message: restriction };
   const values = {
     title: text(data, "title"), section: text(data, "section"), category: text(data, "category"),
     investment: text(data, "investment"), country: text(data, "country"), city: text(data, "city"),
@@ -77,6 +79,8 @@ async function loadReview(id: string): Promise<BusinessReviewData | null> {
 }
 
 export async function saveBusinessMedia(_state: BusinessMediaState, data: FormData): Promise<BusinessMediaState> {
+  const restriction = await getActivityRestriction();
+  if (restriction) return { success: false, message: restriction };
   const opportunityId = text(data, "opportunityId"), editToken = text(data, "editToken"), image = text(data, "image");
   const galleryImages = data.getAll("galleryImages").map(String).map((item) => item.trim()).filter(Boolean);
   const names = data.getAll("documentNames").map(String), types = data.getAll("documentTypes").map(String), urls = data.getAll("documentUrls").map(String);
@@ -105,14 +109,15 @@ export async function saveBusinessMedia(_state: BusinessMediaState, data: FormDa
 export async function publishBusiness(_state: BusinessPublishState, data: FormData): Promise<BusinessPublishState> {
   const user = await getCurrentUser();
   if (!user) return { success: false, message: "Verify your email before publishing." };
+  if (user.blockedAt) return { success: false, message: BLOCKED_ACTIVITY_MESSAGE };
   const opportunityId = text(data, "opportunityId"), editToken = text(data, "editToken");
   const draft = await prisma.businessOpportunity.findFirst({ where: { id: opportunityId, listingStatus: "draft", draftTokenHash: hash(editToken) }, select: { id: true, slug: true } });
   if (!draft) return { success: false, message: "This opportunity draft could not be verified." };
   try {
-    await prisma.businessOpportunity.update({ where: { id: draft.id }, data: { listingStatus: "published", draftTokenHash: null, ownerId: user.id, postedDate: new Date().toLocaleDateString("en-GB") } });
+    await prisma.businessOpportunity.update({ where: { id: draft.id }, data: { listingStatus: "pending", draftTokenHash: null, ownerId: user.id, postedDate: new Date().toLocaleDateString("en-GB") } });
     revalidatePath("/business-opportunities");
     revalidatePath(`/business-opportunities/${draft.slug}`);
-    return { success: true, message: "Your business opportunity has been published.", slug: draft.slug };
+    return { success: true, message: "Your business opportunity was submitted for admin approval.", slug: draft.slug };
   } catch (error) {
     console.error("Unable to publish business opportunity", error);
     return { success: false, message: "We could not publish the opportunity. Your draft remains saved." };

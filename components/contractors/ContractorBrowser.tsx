@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { SaveListingButton } from "@/components/listings/SaveListingButton";
 import type { ContractorProfile } from "@/lib/types";
 
 const normalize = (value: string) => value.trim().toLowerCase();
@@ -13,6 +14,7 @@ type Props = {
   countries: Array<{ code: string; name: string }>;
   cities: Array<{ slug: string; name: string; countryCode: string }>;
   initialContractors: ContractorProfile[];
+  savedSlugs: string[];
 };
 
 export function ContractorBrowser({
@@ -22,6 +24,7 @@ export function ContractorBrowser({
   countries,
   cities,
   initialContractors,
+  savedSlugs,
 }: Props) {
   const [search, setSearch] = useState(initialSearch);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
@@ -187,7 +190,7 @@ export function ContractorBrowser({
               className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
             >
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                <div>
+                <div className="min-w-0 flex-1">
                   <div className="mb-3 flex items-center gap-2 flex-wrap">
                     <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900">
                       {contractor.verified ? "Verified" : "Unverified"}
@@ -211,14 +214,15 @@ export function ContractorBrowser({
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-3 md:items-end">
-                  <div className="text-sm text-slate-700">
+                <div className="flex flex-col gap-3 md:w-40 md:shrink-0 md:items-end">
+                  <SaveListingButton listingType="contractor" listingSlug={contractor.slug} initialSaved={savedSlugs.includes(contractor.slug)} compact />
+                  <div className="text-sm text-slate-700 md:w-full">
                     <div>{contractor.projectsCompleted} projects completed</div>
                     <div>Response time: {contractor.responseTime}</div>
                   </div>
                   <Link
                     href={`/contractors/${contractor.slug}`}
-                    className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+                    className="inline-flex min-w-28 items-center justify-center whitespace-nowrap rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
                   >
                     View Profile
                   </Link>

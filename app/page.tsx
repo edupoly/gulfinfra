@@ -5,6 +5,7 @@ import {
   FeaturedContractors,
   FeaturedEquipment,
   FeaturedMaterials,
+  FeaturedRfqs,
   LatestProjects,
 } from "@/components/home/HomeListingSections";
 import { GccCountries } from "@/components/home/GccCountries";
@@ -16,21 +17,23 @@ import { getAllContractors } from "@/services/contractor-service";
 import { getAllEquipment } from "@/services/equipment-service";
 import { getAllMaterials } from "@/services/material-service";
 import { getAllProjectTenders } from "@/services/project-tender-service";
+import { getRfqs } from "@/app/rfqs/data";
 
 export default async function HomePage() {
-  const [contractors, projects, equipment, materials, opportunities] = await Promise.all([
+  const [contractors, projects, equipment, materials, opportunities, rfqs] = await Promise.all([
     getAllContractors(),
     getAllProjectTenders(),
     getAllEquipment(),
     getAllMaterials(),
     getAllBusinessOpportunities(),
+    getRfqs(),
   ]);
 
   return (
     <main className="w-full">
       <HomeHero />
       <GccCountries />
-      <section id="categories" className="mx-auto max-w-7xl space-y-4 px-4 py-10 sm:px-6 lg:px-8">
+      {/* <section id="categories" className="mx-auto max-w-7xl space-y-4 px-4 py-10 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-700">Browse Categories</p>
@@ -71,12 +74,13 @@ export default async function HomePage() {
             );
           })}
         </div>
-      </section>
+      </section> */}
       <FeaturedContractors listings={contractors} />
       <LatestProjects listings={projects} />
       <FeaturedEquipment listings={equipment} />
       <FeaturedMaterials listings={materials} />
       <FeaturedBusinessOpportunities listings={opportunities} />
+      <FeaturedRfqs listings={rfqs} />
       <WhyChooseGulfBuildHub />
       <GccMarketplaceOpportunities />
     </main>

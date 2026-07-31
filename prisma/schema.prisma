@@ -11,8 +11,17 @@ datasource db {
 model User {
   id              String    @id @default(uuid())
   email           String    @unique
+  role            String    @default("user")
   passwordHash    String?   @map("password_hash")
   emailVerifiedAt DateTime? @map("email_verified_at")
+  fullName        String?   @map("full_name")
+  phone           String?
+  company         String?
+  jobTitle        String?   @map("job_title")
+  country         String?
+  profileImageUrl String?   @map("profile_image_url")
+  blockedAt       DateTime? @map("blocked_at")
+  blockedReason   String?   @map("blocked_reason")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
@@ -23,6 +32,11 @@ model User {
   equipmentListings     Equipment[]
   materialListings      Material[]
   businessOpportunities BusinessOpportunity[]
+  savedListings         SavedListing[]
+  rfqs                  Rfq[]                 @relation("RfqBuyer")
+  vendorQuotations      VendorQuotation[]     @relation("QuotationSupplier")
+  quotationMessages     QuotationMessage[]
+  quotationEvents       QuotationEvent[]
 
   @@map("users")
 }
@@ -49,11 +63,13 @@ model EmailOtp {
   expiresAt  DateTime  @map("expires_at")
   attempts   Int       @default(0)
   consumedAt DateTime? @map("consumed_at")
+  usedAt     DateTime? @map("used_at")
   createdAt  DateTime  @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, purpose, createdAt])
+  @@index([userId, purpose, usedAt])
   @@map("email_otps")
 }
 
@@ -580,9 +596,13 @@ model Rfq {
   otherDocumentUrls        String[]  @default([]) @map("other_document_urls")
   postedAt                 DateTime  @default(now()) @map("posted_at")
   updatedAt                DateTime  @updatedAt @map("updated_at")
+  buyerId                  String?   @map("buyer_id")
+  awardedAt                DateTime? @map("awarded_at")
 
   quotations VendorQuotation[]
+  buyer      User?             @relation("RfqBuyer", fields: [buyerId], references: [id], onDelete: SetNull)
 
+  @@index([buyerId, status])
   @@index([status])
   @@index([category])
   @@index([expirationDate])
@@ -590,21 +610,97 @@ model Rfq {
 }
 
 model VendorQuotation {
-  id                     String   @id @default(uuid())
-  rfqId                  String   @map("rfq_id")
-  vendorName             String   @map("vendor_name")
-  offerAmount            String   @map("offer_amount")
-  deliveryLeadtime       String   @map("delivery_leadtime")
-  technicalSpecification String   @map("technical_specification")
-  vendorNotes            String?  @map("vendor_notes")
-  pdfUrl                 String?  @map("pdf_url")
-  status                 String   @default("pending")
-  createdAt              DateTime @default(now()) @map("created_at")
-  updatedAt              DateTime @updatedAt @map("updated_at")
+  id                     String    @id @default(uuid())
+  rfqId                  String    @map("rfq_id")
+  vendorName             String    @map("vendor_name")
+  offerAmount            String    @map("offer_amount")
+  deliveryLeadtime       String    @map("delivery_leadtime")
+  technicalSpecification String    @map("technical_specification")
+  vendorNotes            String?   @map("vendor_notes")
+  pdfUrl                 String?   @map("pdf_url")
+  status                 String    @default("pending")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+  supplierId             String?   @map("supplier_id")
+  companyName            String?   @map("company_name")
+  contactPerson          String?   @map("contact_person")
+  contactEmail           String?   @map("contact_email")
+  contactPhone           String?   @map("contact_phone")
+  unitPrice              String?   @map("unit_price")
+  totalPrice             String?   @map("total_price")
+  currency               String?
+  warranty               String?
+  paymentTerms           String?   @map("payment_terms")
+  validUntil             DateTime? @map("valid_until")
+  submittedAt            DateTime? @map("submitted_at")
+  withdrawnAt            DateTime? @map("withdrawn_at")
 
-  rfq Rfq @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  rfq      Rfq                @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  supplier User?              @relation("QuotationSupplier", fields: [supplierId], references: [id], onDelete: SetNull)
+  messages QuotationMessage[]
+  events   QuotationEvent[]
 
+  @@unique([rfqId, supplierId])
   @@index([rfqId])
+  @@index([supplierId, status])
   @@index([status])
   @@map("vendor_quotations")
+}
+
+model QuotationMessage {
+  id            String   @id @default(uuid())
+  quotationId   String   @map("quotation_id")
+  senderId      String   @map("sender_id")
+  body          String
+  attachmentUrl String?  @map("attachment_url")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  quotation VendorQuotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  sender    User            @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([quotationId, createdAt])
+  @@map("quotation_messages")
+}
+
+model QuotationEvent {
+  id          String   @id @default(uuid())
+  quotationId String   @map("quotation_id")
+  actorId     String?  @map("actor_id")
+  status      String
+  note        String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  quotation VendorQuotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  actor     User?           @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([quotationId, createdAt])
+  @@map("quotation_events")
+}
+
+model ContactSubmission {
+  id              String   @id @default(uuid())
+  fullName        String   @map("full_name")
+  phoneOrWhatsapp String   @map("phone_or_whatsapp")
+  email           String
+  message         String
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@map("contact_submissions")
+}
+
+model SavedListing {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  listingType String   @map("listing_type")
+  listingSlug String   @map("listing_slug")
+  title       String
+  href        String
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingType, listingSlug])
+  @@index([userId, createdAt])
+  @@map("saved_listings")
 }

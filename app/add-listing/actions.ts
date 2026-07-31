@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { createHash, randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { getCurrentUser } from "@/lib/auth";
+import { BLOCKED_ACTIVITY_MESSAGE, getActivityRestriction, getCurrentUser } from "@/lib/auth";
 
 export type ContractorDraftState = {
   success: boolean;
@@ -91,6 +91,8 @@ export async function saveContractorDraft(
   _previousState: ContractorDraftState,
   formData: FormData,
 ): Promise<ContractorDraftState> {
+  const restriction = await getActivityRestriction();
+  if (restriction) return { success: false, message: restriction };
   const values = {
     name: text(formData, "name"),
     companyType: text(formData, "companyType"),
@@ -292,6 +294,8 @@ export async function saveContractorMedia(
   _previousState: ContractorMediaState,
   formData: FormData,
 ): Promise<ContractorMediaState> {
+  const restriction = await getActivityRestriction();
+  if (restriction) return { success: false, message: restriction };
   const contractorId = text(formData, "contractorId");
   const editToken = text(formData, "editToken");
   const logoUrl = text(formData, "logoUrl");
@@ -454,6 +458,7 @@ export async function publishContractor(
 ): Promise<ContractorPublishState> {
   const user = await getCurrentUser();
   if (!user) return { success: false, message: "Verify your email before publishing." };
+  if (user.blockedAt) return { success: false, message: BLOCKED_ACTIVITY_MESSAGE };
   const contractorId = text(formData, "contractorId");
   const editToken = text(formData, "editToken");
 
@@ -480,7 +485,7 @@ export async function publishContractor(
     await prisma.contractor.update({
       where: { id: draft.id },
       data: {
-        listingStatus: "published",
+        listingStatus: "pending",
         draftTokenHash: null,
         ownerId: user.id,
         memberSince: String(new Date().getFullYear()),
@@ -492,7 +497,7 @@ export async function publishContractor(
 
     return {
       success: true,
-      message: "Your contractor listing has been saved and published.",
+      message: "Your contractor listing was submitted for admin approval.",
       slug: draft.slug,
     };
   } catch (error) {

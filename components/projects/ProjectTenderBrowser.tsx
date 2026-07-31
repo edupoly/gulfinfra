@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { SaveListingButton } from "@/components/listings/SaveListingButton";
 import type { ProjectTenderProfile } from "@/lib/types";
 
 const normalize = (value: string) => value.trim().toLowerCase();
@@ -12,6 +13,7 @@ type Props = {
   countries: Array<{ code: string; name: string }>;
   cities: Array<{ slug: string; name: string; countryCode: string }>;
   initialProjectTenders: ProjectTenderProfile[];
+  savedSlugs: string[];
 };
 
 export function ProjectTenderBrowser({
@@ -20,6 +22,7 @@ export function ProjectTenderBrowser({
   countries,
   cities,
   initialProjectTenders,
+  savedSlugs,
 }: Props) {
   const [search, setSearch] = useState(initialSearch);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
@@ -203,6 +206,7 @@ export function ProjectTenderBrowser({
                 </div>
 
                 <div className="flex flex-col gap-3 md:items-end">
+                  <SaveListingButton listingType="project" listingSlug={project.slug} initialSaved={savedSlugs.includes(project.slug)} compact />
                   <div className="text-sm text-slate-700">
                     <div>{project.budget}</div>
                     <div>Deadline: {project.deadline}</div>

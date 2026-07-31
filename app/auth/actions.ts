@@ -21,16 +21,29 @@ export type AuthState = {
   step?: "email" | "otp" | "password" | "complete";
   email?: string;
   developmentOtp?: string;
+  redirectTo?: string;
 };
 
 const validEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+const otpPurpose = (data: FormData) =>
+  data.get("purpose") === "rfq_create" ? "rfq_create" : "login";
+
+export async function getSignedInEmail() {
+  const user = await getCurrentUser();
+  return user?.emailVerifiedAt ? user.email : null;
+}
 
 export async function requestOtp(_state: AuthState, data: FormData): Promise<AuthState> {
   const email = normalizeEmail(String(data.get("email") ?? ""));
+  const purpose = otpPurpose(data);
   if (!validEmail(email)) return { success: false, message: "Enter a valid email address.", step: "email" };
 
   const recent = await prisma.emailOtp.findFirst({
-    where: { user: { email }, createdAt: { gt: new Date(Date.now() - 60_000) } },
+    where: {
+      user: { email },
+      purpose,
+      createdAt: { gt: new Date(Date.now() - 60_000) },
+    },
   });
   if (recent) return { success: false, message: "Please wait one minute before requesting another code.", step: "otp", email };
 
@@ -39,20 +52,30 @@ export async function requestOtp(_state: AuthState, data: FormData): Promise<Aut
     update: {},
     create: { email },
   });
-  const code = String(randomInt(100000, 1000000));
+  if (purpose === "rfq_create" && user.blockedAt) {
+    return {
+      success: false,
+      message: "Your account is blocked and cannot create RFQs.",
+      step: "email",
+      email,
+    };
+  }
+  const code = String(randomInt(1000, 10000));
   await prisma.emailOtp.create({
     data: {
       userId: user.id,
-      purpose: "login",
+      purpose,
       codeHash: hashValue(`${user.id}:${code}`),
       expiresAt: new Date(Date.now() + 10 * 60_000),
     },
   });
   try {
-    const result = await sendOtpEmail(email, code);
+    const result = await sendOtpEmail(email, code, {
+      requireDelivery: purpose === "rfq_create",
+    });
     return {
       success: true,
-      message: result.delivered ? "We sent a 6-digit code to your email." : "Development code generated below.",
+      message: result.delivered ? "We sent a 4-digit code to your email." : "Development code generated below.",
       step: "otp",
       email,
       developmentOtp: result.delivered ? undefined : code,
@@ -66,11 +89,12 @@ export async function requestOtp(_state: AuthState, data: FormData): Promise<Aut
 export async function verifyOtp(_state: AuthState, data: FormData): Promise<AuthState> {
   const email = normalizeEmail(String(data.get("email") ?? ""));
   const code = String(data.get("code") ?? "").trim();
+  const purpose = otpPurpose(data);
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user || !/^\d{6}$/.test(code)) return { success: false, message: "Enter the valid 6-digit code.", step: "otp", email };
+  if (!user || !/^\d{4}$/.test(code)) return { success: false, message: "Enter the valid 4-digit code.", step: "otp", email };
 
   const otp = await prisma.emailOtp.findFirst({
-    where: { userId: user.id, purpose: "login", consumedAt: null },
+    where: { userId: user.id, purpose, consumedAt: null },
     orderBy: { createdAt: "desc" },
   });
   if (!otp || otp.expiresAt <= new Date() || otp.attempts >= 5) {
@@ -90,6 +114,7 @@ export async function verifyOtp(_state: AuthState, data: FormData): Promise<Auth
     message: user.passwordHash ? "Email verified." : "Email verified. Create your password.",
     step: user.passwordHash ? "complete" : "password",
     email,
+    redirectTo: user.role === "admin" ? "/admin" : "/my-listings",
   };
 }
 
@@ -116,7 +141,13 @@ export async function loginWithPassword(_state: AuthState, data: FormData): Prom
     return { success: false, message: "Incorrect email or password.", step: "email", email };
   }
   await createSession(user.id);
-  return { success: true, message: "Signed in successfully.", step: "complete", email };
+  return {
+    success: true,
+    message: "Signed in successfully.",
+    step: "complete",
+    email,
+    redirectTo: user.role === "admin" ? "/admin" : "/my-listings",
+  };
 }
 
 export async function logout() {

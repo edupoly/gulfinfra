@@ -60,6 +60,26 @@ export async function requireCurrentUser() {
   return user;
 }
 
+export const BLOCKED_ACTIVITY_MESSAGE =
+  "Your account has been blocked by an administrator. You cannot perform this activity.";
+
+export async function requireActiveUser() {
+  const user = await requireCurrentUser();
+  if (user.blockedAt) throw new Error("ACCOUNT_BLOCKED");
+  return user;
+}
+
+export async function getActivityRestriction() {
+  const user = await getCurrentUser();
+  return user?.blockedAt ? BLOCKED_ACTIVITY_MESSAGE : null;
+}
+
+export async function requireAdmin() {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "admin") return null;
+  return user;
+}
+
 export async function destroySession() {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
@@ -68,4 +88,3 @@ export async function destroySession() {
   }
   store.delete(SESSION_COOKIE);
 }
-

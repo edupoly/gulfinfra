@@ -1,6 +1,17 @@
 import { PrismaClient } from "@prisma/client";
+import { randomBytes, scrypt as scryptCallback } from "node:crypto";
+import { promisify } from "node:util";
 
 const prisma = new PrismaClient({ log: ["error"] });
+const scrypt = promisify(scryptCallback);
+const DEFAULT_ADMIN_EMAIL = "admin@gulfinfrahub.com";
+const DEFAULT_ADMIN_PASSWORD = "Admin@123";
+
+async function hashPassword(password) {
+  const salt = randomBytes(16).toString("hex");
+  const derived = await scrypt(password, salt, 64);
+  return `scrypt:${salt}:${derived.toString("hex")}`;
+}
 
 const categories = [
   {
@@ -564,6 +575,30 @@ const contractors = [
 ];
 
 async function main() {
+  const existingAdmin = await prisma.user.findUnique({
+    where: { email: DEFAULT_ADMIN_EMAIL },
+    select: { passwordHash: true },
+  });
+  const adminPasswordHash =
+    existingAdmin?.passwordHash ?? (await hashPassword(DEFAULT_ADMIN_PASSWORD));
+
+  await prisma.user.upsert({
+    where: { email: DEFAULT_ADMIN_EMAIL },
+    update: {
+      role: "admin",
+      fullName: "GulfInfraHub Administrator",
+      emailVerifiedAt: new Date(),
+      passwordHash: adminPasswordHash,
+    },
+    create: {
+      email: DEFAULT_ADMIN_EMAIL,
+      role: "admin",
+      fullName: "GulfInfraHub Administrator",
+      emailVerifiedAt: new Date(),
+      passwordHash: adminPasswordHash,
+    },
+  });
+
   for (const category of categories) {
     await prisma.category.upsert({
       where: { slug: category.slug },
@@ -821,6 +856,7 @@ async function main() {
   }
 
   console.log("Seed completed successfully.");
+  console.log(`Default admin: ${DEFAULT_ADMIN_EMAIL}`);
 }
 
 main()

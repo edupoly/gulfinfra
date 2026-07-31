@@ -1,0 +1,210 @@
+
+===== PAGE 1 =====
+GULFBUILDHUB  
+Construction  &  Industrial   listing  website  
+PROJECT  OVERVIEW  
+ 
+MAIN  MENU  
+1.  Home  2.  Contractors  &  Industrial  Services  3.  Projects  &  Tenders  4.  RFQs(Request  for  Quotation)   5.  Equipment  Marketplace  6.  Construction  &  Industrial  Materials  7.  Business  Opportunities  8.  Blog  9.  About  Us  10.  Contact  Us  11.  Login  12.  Register  13.  Add  Listing  
+ 
+HOMEPAGE  LAYOUT  
+1.  Hero  Banner  2.  GCC  Countries  We  Serve  3.  Contractors  &  Industrial  Services  4.  Projects  &  Tenders  5.  Latest  RFQs  6.  Equipment  Marketplace  7.  Construction  &  Industrial  Materials  8.  Business  Opportunities  9.  Featured  Listings  
+
+===== PAGE 2 =====
+10.  Featured  Suppliers  11.  Latest  Projects  &  Tenders  12.  Why  Choose  GulfBuildHub  13.  Call  To  Action  14.  Footer  
+ 
+ 
+GLOBAL  SEARCH  
+Search  Filters:  
+●  Keyword  ●  Category  ●  Country  ●  City  ●  Subcategory  ●  Listing  Type  ●  Featured  Listings  
+ 
+ 
+GCC  COUNTRIES  
+●  UAE  ●  Saudi  Arabia  ●  Kuwait  ●  Qatar  ●  Oman  ●  Bahrain  
+ 
+
+===== PAGE 3 =====
+LISTING  MODULES  
+1.  Contractors  &  Industrial  Services  
+Categories  
+●  Civil  Contractors  ●  Building  Contractors  ●  Infrastructure  Contractors  ●  Road  Contractors  ●  MEP  Contractors  ●  Electrical  Contractors  ●  Plumbing  Contractors  ●  HVAC  Contractors  ●  Interior  Fit-Out  Contractors  ●  Steel  Fabrication  ●  Industrial  Maintenance  ●  EPC  Contractors  ●  Oil  &  Gas  Contractors  ●  Engineering  Consultants  ●  Quantity  Surveyors  ●  BIM  Consultants  ●  Cost  Estimation  Services  
+Listing  Fields  
+●  Company  Name  ●  Logo  ●  Description  ●  Services  ●  Experience  ●  Country  ●  City  ●  Phone  ●  WhatsApp  ●  Email  ●  Website  ●  Gallery  ●  Company  Brochure  
+ 
+ 
+
+===== PAGE 4 =====
+Buttons  
+●  Call  ●  WhatsApp  ●  Send  Enquiry  ●  Save  Listing  
+ 
+2.  Projects  &  Tenders  
+Categories  
+●  Building  Projects  ●  Infrastructure  Projects  ●  Government  Tenders  ●  Industrial  Projects  ●  Oil  &  Gas  Projects  ●  MEP  Projects  ●  Interior  Fit-Out  ●  Roads  &  Bridges  ●  Factory  Projects  ●  Warehouse  Construction  ●  Maintenance  Contracts  
+Project  Fields  
+●  Project  Title  ●  Description  ●  Budget  ●  Country  ●  City  ●  Closing  Date  ●  Documents  ●  Drawings  ●  Contact  Information  
+Buttons  
+●  View  Details  ●  Apply  ●  Call  ●  WhatsApp  
+ 
+
+===== PAGE 5 =====
+3.  RFQ  Marketplace  
+Buyer  Workflow  
+Page  1  
+Buyer  Dashboard  (My  RFQs)  
+Features  
+●  Search  RFQs  ●  Filter  by  Status  ●  Post  New  RFQ  ●  Edit  RFQ  ●  View  Quotations  
+ 
+Page  2  
+Post  New  RFQ  (Multi-Step  Form)  
+Step  1  
+●  Project  Name  ●  Category  ●  Material/Service  ●  Country  ●  City  ●  Delivery  Date  ●  Closing  Date  ●  Budget  
+Step  2  
+●  Quantity  ●  Unit  ●  Specifications  ●  Delivery  Address  ●  Notes  
+ 
+ 
+
+===== PAGE 6 =====
+Step  3  
+Upload  
+●  BOQ  ●  Drawings  ●  Specifications  ●  Other  Documents  
+Step  4  
+Review  &  Publish  
+Buttons  
+●  Previous  ●  Save  Draft  ●  Publish  RFQ  
+ 
+Page  3  
+RFQ  Details  
+Sections  
+●  Project  Information  ●  Material  Requirements  ●  Attachments  ●  Quotations  Received  ●  Status  
+Buttons  
+●  Edit  RFQ  ●  View  Quotations  ●  Close  RFQ  
+ 
+ 
+ 
+ 
+
+===== PAGE 7 =====
+Page  4  
+Received  Quotations  
+Shows  
+●  Supplier  Name  ●  Price  ●  Delivery  Time  ●  Warranty  ●  Status  ●  Download  PDF  
+Buttons  
+●  View  Details  ●  Chat  ●  Award  Supplier  ●  Reject  
+ 
+Supplier  Workflow  
+Page  5  
+Available  RFQs  
+Search  Filters  
+●  Category  ●  Country  ●  City  ●  Closing  Date  
+Buttons  
+●  View  RFQ  ●  Submit  Quotation  
+ 
+ 
+ 
+
+===== PAGE 8 =====
+Page  6  
+RFQ  Details  +  Submit  Quotation  
+Top  
+●  Project  Information  ●  Specifications  ●  Download  BOQ  ●  Download  Drawings  
+Bottom  
+Quotation  Form  
+●  Company  Name  ●  Contact  Person  ●  Unit  Price  ●  Total  Price  ●  Delivery  Time  ●  Warranty  ●  Payment  Terms  ●  Remarks  ●  Upload  Quotation  PDF  
+Button  
+Submit  Quotation
+ 
+Page  7  
+My  Quotations  
+Shows  
+●  RFQ  ●  Buyer  ●  Submitted  Price  ●  Status  
+Buttons  
+●  View  ●  Edit  ●  Withdraw  
+
+===== PAGE 9 =====
+ 
+Page  8  
+Quotation  Details  +  Messages  
+Displays  
+●  Submitted  Price  ●  Status  Timeline  ●  Buyer  Messages  ●  Chat  ●  Upload  Files  ●  WhatsApp  
+If  awarded  
+Display  
+Congratulations!  
+Buttons  
+●  Download  Award  Letter  ●  Contact  Buyer  
+ 
+4.  Equipment  Marketplace  
+Categories  
+●  Excavators  ●  Cranes  ●  Forklifts  ●  Boom  Lifts  ●  Loaders  ●  Trucks  ●  Rollers  ●  Scaffolding  ●  Generators  ●  Compressors  
+ 
+ 
+
+===== PAGE 10 =====
+Sections  
+●  Equipment  for  Rent  ●  Equipment  for  Sale  ●  Equipment  Wanted  
+Listing  Fields  
+●  Equipment  Name  ●  Brand  ●  Model  ●  Year  ●  Price  ●  Country  ●  City  ●  Photos  
+Buttons  
+●  Call  ●  WhatsApp  ●  Enquiry  
+ 
+5.  Construction  &  Industrial  Materials  
+Sections  
+●  Materials  for  Sale  ●  Suppliers  Directory  ●  Buyers  Directory  
+Construction  Materials  
+●  Cement  ●  Steel  &  Rebar  ●  Bricks  &  Blocks  ●  Sand  &  Aggregate  ●  Ready-Mix  Concrete  ●  Tiles  ●  Paints  ●  Electrical  Materials  ●  Plumbing  Materials  ●  HVAC  Materials  
+
+===== PAGE 11 =====
+Industrial  Materials  
+●  Pipes  ●  Valves  ●  Fittings  ●  Flanges  ●  Structural  Steel  ●  Industrial  Chemicals  ●  Welding  Materials  ●  PPE  ●  Pumps  ●  Motors  ●  Bearings  ●  Industrial  Tools  ●  Electrical  Components  ●  Oil  &  Gas  Materials  ●  Marine  Supplies  
+Buttons  
+●  Call  ●  WhatsApp  ●  Request  Quotation  
+ 
+6.  Business  Opportunities  
+Sections  
+●  Businesses  for  Sale  ●  Businesses  Wanted  ●  Investment  Opportunities  
+Categories  
+●  Restaurants  ●  Cafes  ●  Workshops  ●  Factories  ●  Trading  Companies  ●  Car  Washes  ●  Retail  Shops  ●  Franchise  Businesses  
+
+===== PAGE 12 =====
+Buttons  
+●  Contact  Seller  ●  Call  ●  WhatsApp  
+ 
+ 
+FEATURED  HOMEPAGE  SECTIONS  
+●  Featured  Contractors  ●  Latest  Projects  &  Tenders  ●  Latest  RFQs  ●  Featured  Equipment  ●  Featured  Materials  ●  Featured  Businesses  ●  Featured  Suppliers  ●  Success  Stories  ●  Testimonials  
+ 
+ 
+USER  DASHBOARD  
+●  Dashboard  ●  My  Listings  ●  My  RFQs  ●  My  Quotations  ●  Saved  Listings  ●  Messages  ●  Membership  Plans  ●  Profile  Settings  ●  Notifications
+ 
+
+===== PAGE 13 =====
+ADMIN  PANEL  
+●  Manage  Users  ●  Manage  Listings  ●  Manage  RFQs  ●  Manage  Quotations  ●  Approve  Listings  ●  Manage  Categories  ●  Membership  Plans  ●  Featured  Listings  ●  Banner  Management  ●  Blog  Management  ●  Reports  &  Analytics  ●  Payment  Management  
+ 
+MEMBERSHIP  PLANS  
+●  Free  ●  Basic  ●  Premium  ●  Featured  
+ 
+PAYMENT  GATEWAYS  
+●  PayPal  ●  Stripe  ●  Apple  Pay  ●  Google  Pay  ●  Bank  Transfer  
+ 
+ 
+
+===== PAGE 14 =====
+SEO  REQUIREMENTS  
+●  SEO-Friendly  URLs  ●  Meta  Tags  ●  XML  Sitemap  ●  Schema  Markup  ●  Google  Analytics  ●  Google  Search  Console  ●  Mobile  Responsive  ●  Fast  Loading  
+ 
+DESIGN  REQUIREMENTS  
+Theme  Colors  
+●  Navy  Blue  (#0B1F3A)  ●  Gold  (#F4B400)  ●  White  (#FFFFFF)  
+Design  Style  
+●  Premium  ●  Corporate  ●  Modern  ●  Clean  UI/UX  ●  Mobile  Responsive  ●  Marketplace  Style  ●  Fast  Loading  ●  SEO  Friendly  
+ 
+REFERENCE  WEBSITES  
+●  Justdial  ●  Indiamart  ●  yelp  
+ 
+
+===== PAGE 15 =====
+Total  Core  Modules  
+1.  Contractors  &  Industrial  Services  2.  Projects  &  Tenders  3.  RFQ  Marketplace  4.  Equipment  Marketplace  5.  Construction  &  Industrial  Materials  6.  Business  Opportunities  
+ 
+ 

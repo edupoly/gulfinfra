@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useMemo, useState } from "react";
+import { SaveListingButton } from "@/components/listings/SaveListingButton";
 import type { MaterialProfile } from "@/lib/types";
 
 type Option = { slug: string; name: string };
@@ -12,9 +13,10 @@ type Props = {
   constructionTypes: Option[];
   industrialTypes: Option[];
   countries: Array<{ code: string; name: string }>;
+  savedSlugs: string[];
 };
 
-export function MaterialBrowser({ initialSearch, materials, constructionTypes, industrialTypes, countries }: Props) {
+export function MaterialBrowser({ initialSearch, materials, constructionTypes, industrialTypes, countries, savedSlugs }: Props) {
   const [search, setSearch] = useState(initialSearch);
   const [construction, setConstruction] = useState<string[]>([]);
   const [industrial, setIndustrial] = useState<string[]>([]);
@@ -91,7 +93,10 @@ export function MaterialBrowser({ initialSearch, materials, constructionTypes, i
                 <p className="mt-2 line-clamp-2 text-sm text-slate-600">{item.description}</p>
                 <div className="mt-4 flex flex-col justify-between gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-end">
                   <div><p className="font-black text-slate-950">{item.priceRange}</p><p className="text-xs text-slate-500">MOQ: {item.minimumOrder} · {item.city}, {item.country}</p></div>
-                  <Link href={`/construction-materials/${item.slug}`} className="rounded-full bg-slate-950 px-4 py-2 text-center text-sm font-bold text-white">View material</Link>
+                  <div className="flex items-center gap-2">
+                    <SaveListingButton listingType="material" listingSlug={item.slug} initialSaved={savedSlugs.includes(item.slug)} compact />
+                    <Link href={`/construction-materials/${item.slug}`} className="rounded-full bg-slate-950 px-4 py-2 text-center text-sm font-bold text-white">View material</Link>
+                  </div>
                 </div>
               </div>
             </article>

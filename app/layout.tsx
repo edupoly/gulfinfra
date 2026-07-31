@@ -18,10 +18,12 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const user = await getCurrentUser();
+
   return (
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
-        <SiteNavbar userEmail={(await getCurrentUser())?.email ?? null} />
+        <SiteNavbar userEmail={user?.email ?? null} userRole={user?.role ?? null} />
         {children}
         <SiteFooter />
       </body>

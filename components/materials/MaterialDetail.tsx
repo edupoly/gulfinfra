@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { MaterialProfile } from "@/lib/types";
 
-export function MaterialDetail({ material }: { material: MaterialProfile }) {
+export function MaterialDetail({ material, saveControl }: { material: MaterialProfile; saveControl?: React.ReactNode }) {
   const id = `MAT-${material.slug
     .split("")
     .reduce((total, character) => total + character.charCodeAt(0), 0)}`;
@@ -17,6 +17,7 @@ export function MaterialDetail({ material }: { material: MaterialProfile }) {
           >
             ← Back to Materials
           </Link>
+          {saveControl && <div className="mb-6">{saveControl}</div>}
           <p className="text-sm font-bold uppercase tracking-[0.2em] text-amber-300">
             {material.materialGroup} · {material.materialType}
           </p>
@@ -106,24 +107,24 @@ export function MaterialDetail({ material }: { material: MaterialProfile }) {
               Contact {material.listingType === "Buyer" ? "buyer" : "supplier"}
             </h2>
             <p className="mt-2 text-sm text-slate-300">{material.supplier}</p>
-            <a
-              href={`tel:${material.phone.replace(/\s/g, "")}`}
+            <Link
+              href="/contact"
               className="mt-5 block rounded-full bg-white px-4 py-3 text-center text-sm font-bold text-slate-950"
             >
               {material.phone}
-            </a>
+            </Link>
             <a
               href={`https://wa.me/${material.whatsapp.replace(/\D/g, "")}`}
               className="mt-3 block rounded-full bg-emerald-600 px-4 py-3 text-center text-sm font-bold"
             >
               WhatsApp
             </a>
-            <a
-              href={`mailto:${material.email}`}
+            <Link
+              href="/contact"
               className="mt-3 block rounded-full bg-amber-400 px-4 py-3 text-center text-sm font-bold text-slate-950"
             >
               Send enquiry
-            </a>
+            </Link>
           </section>
           <section className="rounded-3xl border border-slate-200 bg-white p-6">
             <h2 className="text-xl font-black">Supplier details</h2>

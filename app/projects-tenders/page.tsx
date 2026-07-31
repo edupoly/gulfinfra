@@ -1,12 +1,16 @@
 import { ProjectTenderBrowser } from "@/components/projects/ProjectTenderBrowser";
 import { DirectoryHero } from "@/components/directory/DirectoryHero";
 import { getAllProjectTenders, getProjectTenderFilters } from "@/services/project-tender-service";
+import { getCurrentUser } from "@/lib/auth";
+import { getSavedListingSlugs } from "@/lib/saved-listings";
 
 export default async function ProjectsTendersPage({ searchParams }: { searchParams: Promise<{ search?: string }> }) {
   const query = await searchParams;
-  const [projectTenders, filters] = await Promise.all([
+  const user = await getCurrentUser();
+  const [projectTenders, filters, savedSlugs] = await Promise.all([
     getAllProjectTenders(),
     getProjectTenderFilters(),
+    getSavedListingSlugs(user?.id, "project"),
   ]);
 
   return (
@@ -19,6 +23,7 @@ export default async function ProjectsTendersPage({ searchParams }: { searchPara
         countries={filters.countries}
         cities={filters.cities}
         initialProjectTenders={projectTenders}
+        savedSlugs={savedSlugs}
       />
       </div>
     </main>

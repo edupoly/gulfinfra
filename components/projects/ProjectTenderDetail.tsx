@@ -3,8 +3,10 @@ import type { ProjectTenderProfile } from "@/lib/types";
 
 export function ProjectTenderDetail({
   project,
+  saveControl,
 }: {
   project: ProjectTenderProfile;
+  saveControl?: React.ReactNode;
 }) {
   const referenceId = `TND-${project.slug
     .split("")
@@ -23,6 +25,7 @@ export function ProjectTenderDetail({
           >
             ← Back to Projects & Tenders
           </Link>
+          {saveControl && <div className="mb-6">{saveControl}</div>}
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.22em] text-amber-300">
@@ -145,12 +148,12 @@ export function ProjectTenderDetail({
               Review the opportunity and contact the issuing authority for the
               official BOQ, drawings, qualification criteria, and submission process.
             </p>
-            <a
-              href={`mailto:?subject=${encodeURIComponent(`Tender enquiry: ${project.title}`)}`}
+            <Link
+              href="/contact"
               className="mt-5 block rounded-full bg-amber-400 px-5 py-3 text-center text-sm font-black text-slate-950"
             >
               Request tender documents
-            </a>
+            </Link>
             <Link
               href="/contractors"
               className="mt-3 block rounded-full border border-white/20 px-5 py-3 text-center text-sm font-bold text-white"

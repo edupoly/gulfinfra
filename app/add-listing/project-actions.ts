@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { createHash, randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { getCurrentUser } from "@/lib/auth";
+import { BLOCKED_ACTIVITY_MESSAGE, getActivityRestriction, getCurrentUser } from "@/lib/auth";
 
 export type ProjectDraftState = {
   success: boolean;
@@ -78,6 +78,8 @@ export async function saveProjectDraft(
   _state: ProjectDraftState,
   data: FormData,
 ): Promise<ProjectDraftState> {
+  const restriction = await getActivityRestriction();
+  if (restriction) return { success: false, message: restriction };
   const values = {
     title: text(data, "title"),
     projectTypes: [...new Set(data.getAll("projectTypes").map(String))],
@@ -229,6 +231,8 @@ export async function saveProjectMedia(
   _state: ProjectMediaState,
   data: FormData,
 ): Promise<ProjectMediaState> {
+  const restriction = await getActivityRestriction();
+  if (restriction) return { success: false, message: restriction };
   const projectId = text(data, "projectId");
   const editToken = text(data, "editToken");
   const imageUrls = data.getAll("imageUrls").map(String).map((item) => item.trim()).filter(Boolean);
@@ -279,6 +283,7 @@ export async function publishProject(
 ): Promise<ProjectPublishState> {
   const user = await getCurrentUser();
   if (!user) return { success: false, message: "Verify your email before publishing." };
+  if (user.blockedAt) return { success: false, message: BLOCKED_ACTIVITY_MESSAGE };
   const projectId = text(data, "projectId");
   const editToken = text(data, "editToken");
   const draft = await prisma.projectTender.findFirst({
@@ -291,7 +296,7 @@ export async function publishProject(
     await prisma.projectTender.update({
       where: { id: draft.id },
       data: {
-        listingStatus: "published",
+        listingStatus: "pending",
         draftTokenHash: null,
         ownerId: user.id,
         posted: new Date().toLocaleDateString("en-GB"),
@@ -299,7 +304,7 @@ export async function publishProject(
     });
     revalidatePath("/projects-tenders");
     revalidatePath(`/projects-tenders/${draft.slug}`);
-    return { success: true, message: "Your project listing has been published.", slug: draft.slug };
+    return { success: true, message: "Your project listing was submitted for admin approval.", slug: draft.slug };
   } catch (error) {
     console.error("Unable to publish project", error);
     return { success: false, message: "We could not publish the project. Your draft is still saved." };
