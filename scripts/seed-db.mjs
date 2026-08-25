@@ -6,6 +6,7 @@ const prisma = new PrismaClient({ log: ["error"] });
 const scrypt = promisify(scryptCallback);
 const DEFAULT_ADMIN_EMAIL = "admin@gulfinfrahub.com";
 const DEFAULT_ADMIN_PASSWORD = "Admin@123";
+const CLIENT_ADMIN_EMAIL = "rajesh.puppala@ascentraa.com";
 
 async function hashPassword(password) {
   const salt = randomBytes(16).toString("hex");
@@ -599,6 +600,21 @@ async function main() {
     },
   });
 
+  // Client-testing admins authenticate with an OTP sent to their own address
+  // and create their password after the first successful verification.
+  await prisma.user.upsert({
+    where: { email: CLIENT_ADMIN_EMAIL },
+    update: {
+      role: "admin",
+      fullName: "Rajesh Puppala",
+    },
+    create: {
+      email: CLIENT_ADMIN_EMAIL,
+      role: "admin",
+      fullName: "Rajesh Puppala",
+    },
+  });
+
   for (const category of categories) {
     await prisma.category.upsert({
       where: { slug: category.slug },
@@ -857,6 +873,7 @@ async function main() {
 
   console.log("Seed completed successfully.");
   console.log(`Default admin: ${DEFAULT_ADMIN_EMAIL}`);
+  console.log(`Client admin: ${CLIENT_ADMIN_EMAIL}`);
 }
 
 main()
