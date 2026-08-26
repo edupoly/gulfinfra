@@ -7,6 +7,7 @@ const scrypt = promisify(scryptCallback);
 const DEFAULT_ADMIN_EMAIL = "admin@gulfinfrahub.com";
 const DEFAULT_ADMIN_PASSWORD = "Admin@123";
 const CLIENT_ADMIN_EMAIL = "rajesh.puppala@ascentraa.com";
+const TEST_ADMIN_EMAIL = "ascentraa999@gmail.com";
 
 async function hashPassword(password) {
   const salt = randomBytes(16).toString("hex");
@@ -615,6 +616,19 @@ async function main() {
     },
   });
 
+  await prisma.user.upsert({
+    where: { email: TEST_ADMIN_EMAIL },
+    update: {
+      role: "admin",
+      fullName: "testadmin2",
+    },
+    create: {
+      email: TEST_ADMIN_EMAIL,
+      role: "admin",
+      fullName: "testadmin2",
+    },
+  });
+
   for (const category of categories) {
     await prisma.category.upsert({
       where: { slug: category.slug },
@@ -874,6 +888,7 @@ async function main() {
   console.log("Seed completed successfully.");
   console.log(`Default admin: ${DEFAULT_ADMIN_EMAIL}`);
   console.log(`Client admin: ${CLIENT_ADMIN_EMAIL}`);
+  console.log(`Test admin: ${TEST_ADMIN_EMAIL}`);
 }
 
 main()

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { logout } from "@/app/auth/actions";
 
 const links = [
   { href: "/admin/overview", label: "Overview" },
@@ -52,6 +53,14 @@ export function AdminSidebar({ email, fullName }: { email: string; fullName: str
           </li>
         </ul>
       </nav>
+      <form action={logout} className="border-t border-slate-200 p-3">
+        <button
+          type="submit"
+          className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-bold text-red-700 transition hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700"
+        >
+          Sign out
+        </button>
+      </form>
     </aside>
   );
 }
