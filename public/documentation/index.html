@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="GulfInfraHub application documentation and feature reference." />
+  <title>GulfInfraHub Documentation</title>
+  <link rel="stylesheet" href="/documentation/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <button id="menuButton" class="icon-button menu-button" aria-label="Open documentation navigation" aria-expanded="false">☰</button>
+    <a class="brand" href="#/introduction/overview" aria-label="GulfInfraHub documentation home">
+      <span class="brand-mark">GI</span>
+      <span><strong>GulfInfraHub</strong><small>Documentation</small></span>
+    </a>
+    <div class="global-search">
+      <span aria-hidden="true">⌕</span>
+      <input id="searchInput" type="search" placeholder="Search documentation…" autocomplete="off" aria-label="Search documentation" />
+      <kbd>⌘ K</kbd>
+      <div id="searchResults" class="search-results" hidden></div>
+    </div>
+    <a class="app-link" href="/" target="_blank" rel="noreferrer">Open application ↗</a>
+  </header>
+
+  <div class="layout">
+    <aside id="sidebar" class="sidebar" aria-label="Documentation navigation">
+      <div class="sidebar-heading">Application guide</div>
+      <nav id="navigation"></nav>
+      <div class="sidebar-footer">
+        <span class="status-dot"></span>
+        <span>Implementation reference</span>
+        <small>Updated August 2026</small>
+      </div>
+    </aside>
+    <button id="backdrop" class="backdrop" aria-label="Close navigation" hidden></button>
+
+    <main id="main" class="main" tabindex="-1">
+      <div class="breadcrumbs" id="breadcrumbs"></div>
+      <article id="content" class="content"></article>
+      <nav class="page-nav" aria-label="Previous and next documentation pages">
+        <a id="previousPage" class="page-nav-card previous" href="#"></a>
+        <a id="nextPage" class="page-nav-card next" href="#"></a>
+      </nav>
+      <footer class="doc-footer">GulfInfraHub Client Documentation <span>•</span> Application behaviour is based on the implemented project.</footer>
+    </main>
+
+    <aside class="toc" aria-label="On this page">
+      <p>On this page</p>
+      <nav id="pageToc"></nav>
+      <a href="#top" class="back-top">↑ Back to top</a>
+    </aside>
+  </div>
+
+  <script src="/documentation/content.js"></script>
+  <script src="/documentation/app.js"></script>
+</body>
+</html>

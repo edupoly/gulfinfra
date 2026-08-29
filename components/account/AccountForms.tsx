@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import {
   changePassword,
+  createInitialPassword,
   requestPasswordReset,
   resetPassword,
   updateProfile,
@@ -96,6 +97,31 @@ export function ChangePasswordForm() {
       )}
       <button disabled={pending} className={button}>
         {pending ? "Updating password…" : "Change password"}
+      </button>
+    </form>
+  );
+}
+
+export function CreatePasswordForm() {
+  const [state, action, pending] = useActionState(createInitialPassword, initialState);
+
+  return (
+    <form action={action} className="space-y-4">
+      <label className="block text-sm font-bold text-slate-700">
+        Create password
+        <input name="password" type="password" minLength={8} required autoComplete="new-password" className={field} />
+      </label>
+      <label className="block text-sm font-bold text-slate-700">
+        Confirm password
+        <input name="confirmation" type="password" minLength={8} required autoComplete="new-password" className={field} />
+      </label>
+      {state.message && (
+        <p role="status" className={`rounded-lg p-3 text-sm font-bold ${state.success ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
+          {state.message}
+        </p>
+      )}
+      <button disabled={pending} className={button}>
+        {pending ? "Creating password…" : "Create password"}
       </button>
     </form>
   );

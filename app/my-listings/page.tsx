@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { ChangePasswordForm, ProfileForm } from "@/components/account/AccountForms";
+import { ChangePasswordForm, CreatePasswordForm, ProfileForm } from "@/components/account/AccountForms";
 import { DashboardSidebar } from "@/components/account/DashboardSidebar";
 import { SaveListingButton } from "@/components/listings/SaveListingButton";
 import type { SavedListingType } from "@/lib/saved-listings";
@@ -141,9 +141,13 @@ export default async function MyListingsPage() {
           <section id="security" className="scroll-mt-32 mt-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
             <div className="max-w-xl">
               <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">Account security</p>
-              <h2 className="mt-2 text-2xl font-black text-[#0b1f3a]">Change password</h2>
-              <p className="mb-5 mt-2 text-sm text-slate-600">Updating your password signs out other active sessions.</p>
-              <ChangePasswordForm />
+              <h2 className="mt-2 text-2xl font-black text-[#0b1f3a]">{user.passwordHash ? "Change password" : "Create password"}</h2>
+              <p className="mb-5 mt-2 text-sm text-slate-600">
+                {user.passwordHash
+                  ? "Updating your password signs out other active sessions."
+                  : "Create your first password to enable password login. No current password is required."}
+              </p>
+              {user.passwordHash ? <ChangePasswordForm /> : <CreatePasswordForm />}
             </div>
           </section>
         </div>

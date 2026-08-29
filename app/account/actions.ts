@@ -105,6 +105,34 @@ export async function changePassword(
   return { success: true, message: "Password changed successfully." };
 }
 
+export async function createInitialPassword(
+  _state: AccountActionState,
+  data: FormData,
+): Promise<AccountActionState> {
+  const user = await getCurrentUser();
+  if (!user) return { success: false, message: "Your session expired. Sign in again." };
+  if (user.blockedAt) return { success: false, message: BLOCKED_ACTIVITY_MESSAGE };
+  if (user.passwordHash) {
+    return { success: false, message: "A password already exists. Use Change password instead." };
+  }
+
+  const password = String(data.get("password") ?? "");
+  const confirmation = String(data.get("confirmation") ?? "");
+  const validationError = passwordValidation(password, confirmation);
+  if (validationError) return { success: false, message: validationError };
+
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: user.id, passwordHash: null },
+      data: { passwordHash: await hashPassword(password) },
+    }),
+    prisma.authSession.deleteMany({ where: { userId: user.id } }),
+  ]);
+  await createSession(user.id);
+
+  return { success: true, message: "Password created successfully." };
+}
+
 export async function requestPasswordReset(
   _state: AccountActionState,
   data: FormData,

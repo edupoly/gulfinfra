@@ -1,71 +1,77 @@
 from pathlib import Path
+
 from docx import Document
-from docx.enum.section import WD_SECTION
-from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
-from docx.shared import Inches, Pt, RGBColor
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
+from docx.shared import Inches, Pt, RGBColor
 
 OUT = Path(__file__).resolve().parents[1] / "deliverables" / "GulfInfraHub_Client_User_Guide.docx"
-NAVY = "0B1F3A"
-BLUE = "1D4ED8"
-AMBER = "FBBF24"
-LIGHT = "F1F5F9"
-MID = "64748B"
-GREEN = "047857"
-RED = "B91C1C"
+
+# compact_reference_guide preset with GulfInfraHub brand overrides.
+NAVY, BLUE, AMBER = "0B1F3A", "1D4ED8", "F4B400"
+INK, MUTED, LIGHT = "162235", "64748B", "E8EEF5"
+PALE_BLUE, PALE_AMBER, WHITE = "EAF2FF", "FFF7D6", "FFFFFF"
+
+
+def set_font(run, size=11, bold=False, color=INK, italic=False):
+    run.font.name = "Calibri"
+    run._element.get_or_add_rPr().rFonts.set(qn("w:ascii"), "Calibri")
+    run._element.get_or_add_rPr().rFonts.set(qn("w:hAnsi"), "Calibri")
+    run.font.size, run.bold, run.italic = Pt(size), bold, italic
+    run.font.color.rgb = RGBColor.from_string(color)
 
 
 def shade(cell, fill):
-    tc_pr = cell._tc.get_or_add_tcPr()
-    shd = tc_pr.find(qn("w:shd"))
-    if shd is None:
-        shd = OxmlElement("w:shd")
-        tc_pr.append(shd)
-    shd.set(qn("w:fill"), fill)
+    props = cell._tc.get_or_add_tcPr()
+    node = props.find(qn("w:shd"))
+    if node is None:
+        node = OxmlElement("w:shd")
+        props.append(node)
+    node.set(qn("w:fill"), fill)
 
 
-def margins(cell, top=100, start=140, bottom=100, end=140):
-    tc_pr = cell._tc.get_or_add_tcPr()
-    tc_mar = tc_pr.first_child_found_in("w:tcMar")
-    if tc_mar is None:
-        tc_mar = OxmlElement("w:tcMar")
-        tc_pr.append(tc_mar)
+def cell_width(cell, width):
+    props = cell._tc.get_or_add_tcPr()
+    node = props.find(qn("w:tcW"))
+    if node is None:
+        node = OxmlElement("w:tcW")
+        props.append(node)
+    node.set(qn("w:w"), str(width))
+    node.set(qn("w:type"), "dxa")
+
+
+def cell_margins(cell, top=80, start=120, bottom=80, end=120):
+    props = cell._tc.get_or_add_tcPr()
+    margins = props.first_child_found_in("w:tcMar")
+    if margins is None:
+        margins = OxmlElement("w:tcMar")
+        props.append(margins)
     for side, value in (("top", top), ("start", start), ("bottom", bottom), ("end", end)):
-        node = tc_mar.find(qn(f"w:{side}"))
+        node = margins.find(qn(f"w:{side}"))
         if node is None:
             node = OxmlElement(f"w:{side}")
-            tc_mar.append(node)
+            margins.append(node)
         node.set(qn("w:w"), str(value))
         node.set(qn("w:type"), "dxa")
 
 
-def set_cell_width(cell, width):
-    tc_pr = cell._tc.get_or_add_tcPr()
-    tc_w = tc_pr.find(qn("w:tcW"))
-    if tc_w is None:
-        tc_w = OxmlElement("w:tcW")
-        tc_pr.append(tc_w)
-    tc_w.set(qn("w:w"), str(width))
-    tc_w.set(qn("w:type"), "dxa")
-
-
-def set_table_widths(table, widths):
+def table_geometry(table, widths):
     table.autofit = False
-    tbl_pr = table._tbl.tblPr
-    tbl_w = tbl_pr.find(qn("w:tblW"))
-    if tbl_w is None:
-        tbl_w = OxmlElement("w:tblW")
-        tbl_pr.append(tbl_w)
-    tbl_w.set(qn("w:w"), str(sum(widths)))
-    tbl_w.set(qn("w:type"), "dxa")
-    tbl_ind = tbl_pr.find(qn("w:tblInd"))
-    if tbl_ind is None:
-        tbl_ind = OxmlElement("w:tblInd")
-        tbl_pr.append(tbl_ind)
-    tbl_ind.set(qn("w:w"), "120")
-    tbl_ind.set(qn("w:type"), "dxa")
+    props = table._tbl.tblPr
+    total = props.find(qn("w:tblW"))
+    if total is None:
+        total = OxmlElement("w:tblW")
+        props.append(total)
+    total.set(qn("w:w"), str(sum(widths)))
+    total.set(qn("w:type"), "dxa")
+    indent = props.find(qn("w:tblInd"))
+    if indent is None:
+        indent = OxmlElement("w:tblInd")
+        props.append(indent)
+    indent.set(qn("w:w"), "120")
+    indent.set(qn("w:type"), "dxa")
     grid = table._tbl.tblGrid
     for child in list(grid):
         grid.remove(child)
@@ -74,90 +80,98 @@ def set_table_widths(table, widths):
         col.set(qn("w:w"), str(width))
         grid.append(col)
     for row in table.rows:
-        for idx, cell in enumerate(row.cells):
-            set_cell_width(cell, widths[idx])
-            margins(cell)
+        for index, cell in enumerate(row.cells):
+            cell_width(cell, widths[index])
+            cell_margins(cell)
             cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
 
 
-def font(run, size=10.5, bold=False, color=NAVY, name="Aptos"):
-    run.font.name = name
-    run._element.get_or_add_rPr().rFonts.set(qn("w:ascii"), name)
-    run._element.get_or_add_rPr().rFonts.set(qn("w:hAnsi"), name)
-    run.font.size = Pt(size)
-    run.bold = bold
-    run.font.color.rgb = RGBColor.from_string(color)
+def page_number(paragraph):
+    run = paragraph.add_run()
+    begin, separate, end = (OxmlElement("w:fldChar") for _ in range(3))
+    begin.set(qn("w:fldCharType"), "begin")
+    separate.set(qn("w:fldCharType"), "separate")
+    end.set(qn("w:fldCharType"), "end")
+    instruction = OxmlElement("w:instrText")
+    instruction.set(qn("xml:space"), "preserve")
+    instruction.text = " PAGE "
+    value = OxmlElement("w:t")
+    value.text = "1"
+    for node in (begin, instruction, separate, value, end):
+        run._r.append(node)
+    set_font(run, 8.5, color=MUTED)
 
 
-def add_text(doc, text, size=10.5, bold=False, color=NAVY, after=6, align=None):
+def para(doc, text, size=11, bold=False, color=INK, after=6, italic=False, align=None):
     p = doc.add_paragraph()
     p.paragraph_format.space_before = Pt(0)
     p.paragraph_format.space_after = Pt(after)
-    p.paragraph_format.line_spacing = 1.2
+    p.paragraph_format.line_spacing = 1.25
     if align is not None:
         p.alignment = align
-    font(p.add_run(text), size, bold, color)
+    set_font(p.add_run(text), size, bold, color, italic)
     return p
-
-
-def add_bullet(doc, text, level=0):
-    p = doc.add_paragraph(style="List Bullet" if level == 0 else "List Bullet 2")
-    p.paragraph_format.space_after = Pt(4)
-    p.paragraph_format.line_spacing = 1.15
-    font(p.add_run(text), 10.25, False, NAVY)
-    return p
-
-
-def add_step(doc, title, detail):
-    p = doc.add_paragraph(style="List Number")
-    p.paragraph_format.space_after = Pt(5)
-    p.paragraph_format.line_spacing = 1.15
-    font(p.add_run(title + " — "), 10.25, True, NAVY)
-    font(p.add_run(detail), 10.25, False, NAVY)
 
 
 def heading(doc, text, level=1):
     p = doc.add_paragraph(style=f"Heading {level}")
     p.paragraph_format.keep_with_next = True
-    p.paragraph_format.space_before = Pt(14 if level == 1 else 10)
-    p.paragraph_format.space_after = Pt(6)
-    for r in p.runs:
-        font(r, 16 if level == 1 else 12.5, True, BLUE if level == 1 else NAVY)
+    p.add_run(text)
     return p
 
 
-def callout(doc, label, text, tone="amber"):
+def bullet(doc, text, level=0):
+    p = doc.add_paragraph(style="List Bullet" if level == 0 else "List Bullet 2")
+    p.paragraph_format.space_after = Pt(4)
+    p.paragraph_format.line_spacing = 1.25
+    set_font(p.add_run(text))
+
+
+def step(doc, title, detail):
+    p = doc.add_paragraph(style="List Bullet")
+    p.paragraph_format.space_after = Pt(4)
+    p.paragraph_format.line_spacing = 1.25
+    set_font(p.add_run(f"{title} — "), bold=True, color=NAVY)
+    set_font(p.add_run(detail))
+
+
+def callout(doc, label, text, tone="blue"):
     table = doc.add_table(rows=1, cols=1)
-    set_table_widths(table, [9360])
+    table.style = "Table Grid"
+    table_geometry(table, [9360])
     cell = table.cell(0, 0)
-    shade(cell, "FFF7D6" if tone == "amber" else "EAF2FF")
+    shade(cell, PALE_BLUE if tone == "blue" else PALE_AMBER)
     p = cell.paragraphs[0]
     p.paragraph_format.space_after = Pt(0)
-    font(p.add_run(label + ": "), 10.25, True, NAVY)
-    font(p.add_run(text), 10.25, False, NAVY)
+    p.paragraph_format.line_spacing = 1.2
+    set_font(p.add_run(f"{label}: "), 10.5, True, NAVY)
+    set_font(p.add_run(text), 10.5)
     doc.add_paragraph().paragraph_format.space_after = Pt(1)
 
 
-def two_col_table(doc, rows, widths=(2450, 6910), header=None):
+def label_table(doc, rows, widths=(2700, 6660), header=None):
     table = doc.add_table(rows=0, cols=2)
     table.style = "Table Grid"
     if header:
         cells = table.add_row().cells
-        for idx, value in enumerate(header):
-            shade(cells[idx], NAVY)
-            p = cells[idx].paragraphs[0]
-            font(p.add_run(value), 9.5, True, "FFFFFF")
+        for i, value in enumerate(header):
+            shade(cells[i], NAVY)
+            cells[i].paragraphs[0].paragraph_format.space_after = Pt(0)
+            set_font(cells[i].paragraphs[0].add_run(value), 10, True, WHITE)
     for left, right in rows:
         cells = table.add_row().cells
-        for idx, value in enumerate((left, right)):
-            if idx == 0:
-                shade(cells[idx], LIGHT)
-            p = cells[idx].paragraphs[0]
+        shade(cells[0], LIGHT)
+        for i, value in enumerate((left, right)):
+            p = cells[i].paragraphs[0]
             p.paragraph_format.space_after = Pt(0)
-            font(p.add_run(value), 9.5, idx == 0, NAVY)
-    set_table_widths(table, list(widths))
+            p.paragraph_format.line_spacing = 1.15
+            set_font(p.add_run(value), 10, i == 0, NAVY if i == 0 else INK)
+    table_geometry(table, list(widths))
     doc.add_paragraph().paragraph_format.space_after = Pt(1)
-    return table
+
+
+def module_intro(doc, purpose, audience, entry):
+    label_table(doc, [("Purpose", purpose), ("Primary users", audience), ("Main entry point", entry)])
 
 
 def page_break(doc):
@@ -166,201 +180,190 @@ def page_break(doc):
 
 doc = Document()
 section = doc.sections[0]
-section.page_width = Inches(8.5)
-section.page_height = Inches(11)
-section.top_margin = Inches(0.78)
-section.bottom_margin = Inches(0.72)
-section.left_margin = Inches(1)
-section.right_margin = Inches(1)
-section.header_distance = Inches(0.35)
-section.footer_distance = Inches(0.35)
+section.page_width, section.page_height = Inches(8.5), Inches(11)
+section.top_margin = section.bottom_margin = Inches(1)
+section.left_margin = section.right_margin = Inches(1)
+section.header_distance = section.footer_distance = Inches(0.492)
 
-styles = doc.styles
-normal = styles["Normal"]
-normal.font.name = "Aptos"
-normal._element.rPr.rFonts.set(qn("w:ascii"), "Aptos")
-normal._element.rPr.rFonts.set(qn("w:hAnsi"), "Aptos")
-normal.font.size = Pt(10.5)
-normal.font.color.rgb = RGBColor.from_string(NAVY)
-normal.paragraph_format.space_after = Pt(6)
-normal.paragraph_format.line_spacing = 1.2
-for name, size, color in (("Heading 1", 16, BLUE), ("Heading 2", 12.5, NAVY), ("Heading 3", 11, NAVY)):
-    style = styles[name]
-    style.font.name = "Aptos Display"
-    style._element.rPr.rFonts.set(qn("w:ascii"), "Aptos Display")
-    style._element.rPr.rFonts.set(qn("w:hAnsi"), "Aptos Display")
-    style.font.size = Pt(size)
-    style.font.bold = True
+normal = doc.styles["Normal"]
+normal.font.name, normal.font.size = "Calibri", Pt(11)
+normal._element.rPr.rFonts.set(qn("w:ascii"), "Calibri")
+normal._element.rPr.rFonts.set(qn("w:hAnsi"), "Calibri")
+normal.font.color.rgb = RGBColor.from_string(INK)
+normal.paragraph_format.space_before, normal.paragraph_format.space_after = Pt(0), Pt(6)
+normal.paragraph_format.line_spacing = 1.25
+
+for name, size, color, before, after in (("Heading 1", 16, BLUE, 18, 10), ("Heading 2", 13, BLUE, 14, 7), ("Heading 3", 12, NAVY, 10, 5)):
+    style = doc.styles[name]
+    style.font.name, style.font.size, style.font.bold = "Calibri", Pt(size), True
+    style._element.rPr.rFonts.set(qn("w:ascii"), "Calibri")
+    style._element.rPr.rFonts.set(qn("w:hAnsi"), "Calibri")
     style.font.color.rgb = RGBColor.from_string(color)
+    style.paragraph_format.space_before, style.paragraph_format.space_after = Pt(before), Pt(after)
+    style.paragraph_format.keep_with_next = True
+for name in ("List Bullet", "List Bullet 2", "List Number"):
+    style = doc.styles[name]
+    style.font.name, style.font.size = "Calibri", Pt(11)
+    style.paragraph_format.space_after, style.paragraph_format.line_spacing = Pt(4), 1.25
 
 header = section.header.paragraphs[0]
 header.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-font(header.add_run("GulfInfraHub  |  Client User Guide"), 8.5, True, MID)
+set_font(header.add_run("GulfInfraHub  |  Client User Guide"), 8.5, True, MUTED)
 footer = section.footer.paragraphs[0]
-footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
-font(footer.add_run("Client reference • August 2026"), 8, False, MID)
+footer.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+set_font(footer.add_run("Client reference  •  August 2026  |  "), 8.5, color=MUTED)
+page_number(footer)
 
-# Cover
-add_text(doc, "CLIENT USER GUIDE", 10, True, BLUE, 26)
-add_text(doc, "GulfInfraHub", 30, True, NAVY, 4)
-add_text(doc, "Marketplace operations, administration and account security", 15, False, MID, 28)
-callout(doc, "Purpose", "A practical guide for client testers and administrators using the current GulfInfraHub application.", "blue")
-heading(doc, "What this guide covers", 1)
-two_col_table(doc, [
-    ("Access", "OTP sign-in, first-time password setup and password recovery"),
-    ("Administration", "Dashboard, categories, users, listings, applications and contact messages"),
-    ("Marketplace", "Browse, search, publish listings, create RFQs and submit quotations"),
-    ("Security", "Password changes, blocked accounts and safe testing practices"),
-], header=("Area", "Included workflows"))
-heading(doc, "Administrator accounts", 1)
-two_col_table(doc, [
-    ("Client testing", "rajesh.puppala@ascentraa.com"),
-    ("Development testing", "info.edupoly@gmail.com (testadmin2)"),
-], header=("Use", "Account"))
-callout(doc, "Important", "Never share OTPs or passwords. OTPs expire after 10 minutes and repeated requests are limited to one per minute.")
+# Editorial cover.
+para(doc, "CLIENT USER GUIDE", 10, True, AMBER, 22, align=WD_ALIGN_PARAGRAPH.CENTER)
+para(doc, "GulfInfraHub", 30, True, NAVY, 5, align=WD_ALIGN_PARAGRAPH.CENTER)
+para(doc, "Authentication, authorization and marketplace modules", 15, color=BLUE, after=24, align=WD_ALIGN_PARAGRAPH.CENTER)
+callout(doc, "Purpose", "A clear operational reference for client users, marketplace participants and administrators using the current application.")
+heading(doc, "How this guide is organized")
+label_table(doc, [("Section 1", "Project orientation and common navigation"), ("Section 2", "Authentication and authorization in one consolidated section"), ("Sections 3–8", "One independent section for each core marketplace module"), ("Sections 9–11", "Account workspace, administration, support and acceptance checks")], header=("Guide area", "Coverage"))
+heading(doc, "Core modules")
+para(doc, "Contractors & Industrial Services  •  Projects & Tenders  •  RFQ Marketplace  •  Equipment Marketplace  •  Construction & Industrial Materials  •  Business Opportunities", 11, True, NAVY, 8)
+callout(doc, "Scope", "This document describes functionality present in the supplied project. Items such as memberships, payments, banners and blog management are not represented as active modules in this guide.", "amber")
 
 page_break(doc)
-heading(doc, "1. Sign in and activate an administrator account", 1)
-add_text(doc, "Open the application’s Sign in page. New administrator accounts use email verification before a password is created.")
-add_step(doc, "Enter the administrator email", "Use the assigned client or development testing address.")
-add_step(doc, "Select Email me a code", "A four-digit OTP is sent to the entered address.")
-add_step(doc, "Open the correct inbox", "Find the message titled “Your GulfInfraHub verification code”.")
-add_step(doc, "Enter the four-digit code", "The code is valid for 10 minutes and can be used once.")
-add_step(doc, "Create a password", "Use at least eight characters, including a letter and a number.")
-add_step(doc, "Continue to Admin", "A verified admin is redirected to the administrator dashboard.")
-callout(doc, "Email routing", "The message may be sent from info.edupoly@gmail.com, but the To field is always the email entered for sign-in. For testadmin2, sender and recipient are the same account.", "blue")
-heading(doc, "Returning sign-in", 2)
-add_bullet(doc, "Use the saved password by selecting “Already have a password?”.")
-add_bullet(doc, "Or request a new email code and sign in without using the password.")
-add_bullet(doc, "Use “Forgot password?” to receive a single-use reset link valid for 30 minutes.")
-heading(doc, "Common OTP issues", 2)
-two_col_table(doc, [
-    ("No message", "Check Spam/Junk, confirm the To address, and wait one minute before retrying."),
-    ("Code rejected", "Use the newest code; request another if it is older than 10 minutes."),
-    ("Too many attempts", "Request a new code after five incorrect entries."),
-    ("Wrong inbox", "Return to the email step and enter the intended administrator email."),
-], header=("Issue", "Action"))
+heading(doc, "Contents")
+label_table(doc, [("1", "Project overview and navigation"), ("2", "Authentication and authorization"), ("3", "Module: Contractors & Industrial Services"), ("4", "Module: Projects & Tenders"), ("5", "Module: RFQ Marketplace"), ("6", "Module: Equipment Marketplace"), ("7", "Module: Construction & Industrial Materials"), ("8", "Module: Business Opportunities"), ("9", "Account workspace and shared features"), ("10", "Administration module"), ("11", "Support, privacy and client acceptance")], widths=(900, 8460), header=("Section", "Subject"))
+heading(doc, "Reading pattern for each module", 2)
+for item in ("Purpose and intended users", "What users can view and do", "Listing or transaction workflow", "Statuses, access rules and expected results"):
+    bullet(doc, item)
 
 page_break(doc)
-heading(doc, "2. Admin dashboard and navigation", 1)
-add_text(doc, "The left admin navigation remains available across administration pages. The top account block shows the signed-in administrator name and email.")
-two_col_table(doc, [
-    ("Overview", "Marketplace totals, registered users, blocked users and listing status summary"),
-    ("Categories", "Status totals by marketplace category"),
-    ("User management", "Review users, listing counts, verification state, and block/unblock access"),
-    ("All listings", "Review all marketplace records, including unpublished records"),
-    ("Project applications", "Filter and inspect applications submitted to projects and tenders"),
-    ("Contact submissions", "Read public contact-form messages and contact the sender"),
-    ("Change password", "Update the administrator password and sign out other sessions"),
-    ("Add listing", "Open the marketplace listing creation workflow"),
-], header=("Navigation item", "Purpose"))
-heading(doc, "Dashboard overview", 2)
-add_bullet(doc, "Marketplace listings counts records across contractors, projects, equipment, materials, opportunities and RFQs.")
-add_bullet(doc, "Registered users excludes administrator accounts.")
-add_bullet(doc, "Listing status shows Published, Draft, Pending, Closed, Rejected and On hold totals.")
-callout(doc, "Testing tip", "After creating or changing a listing, return to Overview and Categories to confirm that status totals update as expected.")
+heading(doc, "1. Project overview and navigation")
+para(doc, "GulfInfraHub is a GCC-focused construction and industrial marketplace. It connects buyers, suppliers, contractors, project owners and opportunity publishers through searchable listings and controlled transaction workflows.")
+heading(doc, "Primary navigation", 2)
+label_table(doc, [("Home", "Featured and latest marketplace content across the platform"), ("Marketplace directories", "Contractors, projects, RFQs, equipment, materials and business opportunities"), ("Search", "Unified search across all six core modules"), ("Add listing", "Guided creation flow for the five listing-based modules"), ("Account", "Owned listings, saved items, RFQs, quotations, applications, messages and profile"), ("Admin", "Restricted management area for authorized administrators")], header=("Area", "Purpose"))
+heading(doc, "Common listing lifecycle", 2)
+label_table(doc, [("Draft", "Work is saved but not submitted for public review"), ("Pending", "Submitted and awaiting administrator moderation"), ("Published", "Visible in the public marketplace"), ("On hold", "Temporarily paused by an administrator"), ("Rejected", "Declined during moderation"), ("Closed", "No longer active for responses")], header=("Status", "Meaning"))
+callout(doc, "Visibility rule", "Public directory and detail pages are intended to show published records. Owners and administrators can access additional records through their workspaces.")
 
 page_break(doc)
-heading(doc, "3. Manage listings and categories", 1)
-heading(doc, "Review category activity", 2)
-add_text(doc, "Categories presents a card for each marketplace area with total and status counts:")
-add_bullet(doc, "Contractors")
-add_bullet(doc, "Projects & Tenders")
-add_bullet(doc, "Equipment Marketplace")
-add_bullet(doc, "Construction & Industrial Materials")
-add_bullet(doc, "Business Opportunities")
-add_bullet(doc, "RFQs")
-heading(doc, "Manage all listings", 2)
-add_step(doc, "Open All listings", "Records are grouped by marketplace category.")
-add_step(doc, "Locate the record", "Use its title, reference, date and current status.")
-add_step(doc, "Open the public record", "Use the record link to inspect the customer-facing detail page.")
-add_step(doc, "Apply the required moderation action", "Update publication status or featured state where the screen offers those controls.")
-add_step(doc, "Verify the result", "Confirm the status badge and public visibility match the intended outcome.")
-callout(doc, "Status meaning", "Published is publicly visible; Draft is unfinished; Pending awaits review; On hold is paused; Rejected is declined; Closed is no longer active.", "blue")
-heading(doc, "Before publishing", 2)
-add_bullet(doc, "Check title, category, location and contact information.")
-add_bullet(doc, "Open uploaded documents and verify that images load correctly.")
-add_bullet(doc, "Confirm no private, test-only or misleading content is present.")
+heading(doc, "2. Authentication and authorization")
+para(doc, "Authentication confirms who the user is. Authorization determines what that signed-in user is allowed to view or change. GulfInfraHub combines email verification, password login, database-backed sessions, account status checks, ownership rules and administrator role checks.")
+heading(doc, "2.1 Authentication methods", 2)
+label_table(doc, [("Email OTP", "A four-digit code is emailed to the user. It expires after 10 minutes, is single-use, and allows up to five incorrect attempts."), ("Password", "Created after first successful email verification; minimum eight characters with at least one letter and one number."), ("Password reset", "A single-use email reset link is available from Forgot password and is valid for 30 minutes."), ("Session", "A random session token is stored in an HTTP-only cookie; only its hash is stored in the database. The session lasts up to 30 days.")], header=("Control", "Implementation and user effect"))
+heading(doc, "2.2 Sign-in and first-time activation", 2)
+for title, detail in (("Enter email", "Open Sign in and provide the assigned email address."), ("Request the code", "Select Email me a code. Requests are rate-limited to one per minute."), ("Verify", "Enter the newest four-digit code within 10 minutes."), ("Create a password", "First-time users create and confirm a compliant password."), ("Continue", "Administrators are directed to Admin; normal users are directed to My listings.")):
+    step(doc, title, detail)
+heading(doc, "2.3 Authorization model", 2)
+label_table(doc, [("Public visitor", "Browse published directories and details, search, view public pages and submit the Contact form."), ("Signed-in user", "Use account features and create marketplace records. Access is limited to records owned by that account where ownership applies."), ("Blocked user", "May be identifiable by the system but is prevented from protected marketplace and account activity."), ("Administrator", "Access admin pages, moderate submitted listings, feature published records, review users/applications/contact messages, and block or unblock normal users.")], header=("Role/state", "Authorized access"))
+callout(doc, "Security boundary", "The interface is not the only control. Protected server actions verify the current session, user role, blocked state and/or record ownership before changing data.", "amber")
 
 page_break(doc)
-heading(doc, "4. Manage users", 1)
-add_text(doc, "User management shows non-admin users only. Each record includes identity details, company, listing count, join date, email-verification state and access status.")
-heading(doc, "Block a user", 2)
-add_step(doc, "Find the active user", "Confirm the email and company before taking action.")
-add_step(doc, "Enter a reason", "A concise reason is recommended for audit clarity.")
-add_step(doc, "Select Block user", "The account becomes blocked from marketplace and account activity.")
-heading(doc, "Restore a user", 2)
-add_step(doc, "Find the blocked account", "The record shows a red Blocked badge and the stored reason.")
-add_step(doc, "Select Unblock user", "The account is restored immediately.")
-callout(doc, "Caution", "Double-check the email before blocking. Administrator accounts do not appear on this page and cannot be blocked through this interface.")
-heading(doc, "Recommended client test", 2)
-two_col_table(doc, [
-    ("1", "Create a normal test user with a non-admin email."),
-    ("2", "Publish or draft one test listing from that account."),
-    ("3", "Confirm the user and listing count in User management."),
-    ("4", "Block the user and verify restricted activity."),
-    ("5", "Unblock the user and verify access is restored."),
-], widths=(900, 8460), header=("Step", "Expected action"))
+heading(doc, "2.4 Authorization by action", 2)
+label_table(doc, [("Create a listing", "Signed-in, active user; listing publication also uses email verification in the creation flow."), ("Edit/delete a listing", "The listing owner; administrator moderation remains separate."), ("Save a listing", "Signed-in user."), ("Create an RFQ", "Active user with a fresh RFQ-purpose OTP."), ("Submit a quotation", "Signed-in supplier account; the buyer cannot quote on its own RFQ."), ("Apply to a project", "Signed-in applicant; project ownership and application ownership are checked for later actions."), ("Moderate/feature", "Administrator only; only published listings can be featured."), ("Block/unblock users", "Administrator only; administrators cannot block themselves or another administrator through this interface.")], header=("Action", "Required authorization"))
+heading(doc, "2.5 Account security operations", 2)
+for item in ("Changing a password requires the current password when one already exists.", "After a password change, other active sessions are removed.", "Signing out removes the current database session and cookie.", "Passwords are stored as salted scrypt hashes; OTPs and session tokens are stored as hashes."):
+    bullet(doc, item)
+heading(doc, "Common access issues", 2)
+label_table(doc, [("OTP not received", "Check Spam/Junk and the recipient address; wait one minute before another request."), ("OTP rejected", "Use the newest code and request another if it is older than 10 minutes or has reached five failed attempts."), ("Authorization error", "Confirm the correct account is signed in and that it owns the record or has the required admin role."), ("Blocked message", "Contact an administrator; protected activity remains unavailable until the account is restored.")], header=("Issue", "Recommended action"))
 
 page_break(doc)
-heading(doc, "5. Applications and contact submissions", 1)
-heading(doc, "Project applications", 2)
-add_text(doc, "Administrators can review applications submitted across projects and tenders.")
-add_step(doc, "Choose a status filter", "All statuses, submitted, under review, shortlisted, accepted, rejected or withdrawn.")
-add_step(doc, "Select Filter", "The list refreshes to matching applications.")
-add_step(doc, "Review the summary", "Confirm company, contact, project and listing owner details.")
-add_step(doc, "Select Inspect", "Open the complete application record and its activity.")
-heading(doc, "Contact submissions", 2)
-add_text(doc, "This page lists messages sent through the public Contact form, newest first.")
-add_bullet(doc, "The count badge shows the number of submissions.")
-add_bullet(doc, "Email links open a new email to the sender.")
-add_bullet(doc, "Phone/WhatsApp links can open a supported calling application.")
-add_bullet(doc, "The timestamp is displayed using day/month/year formatting.")
-callout(doc, "Privacy", "Treat application files and contact details as confidential. Download or forward them only when required for the business process.")
+heading(doc, "3. Module: Contractors & Industrial Services")
+module_intro(doc, "Publish and discover contractor and industrial-service company profiles.", "Public visitors, contractors, buyers and administrators", "/contractors and Add listing → Contractor")
+heading(doc, "Directory and detail experience", 2)
+for item in ("Browse and search contractor profiles; filter by supported location information.", "View company identity, type, description, services, countries/cities served and contact channels.", "Review logo, gallery, licences, documents and featured projects when supplied.", "Save a listing from supported listing cards/details while signed in."):
+    bullet(doc, item)
+heading(doc, "Create and manage a contractor profile", 2)
+for title, detail in (("Select Contractor", "Open Add listing and choose the contractor listing type."), ("Enter company information", "Provide name, company type, service categories, establishment details and description."), ("Add coverage and contacts", "Provide countries, cities, areas served, website, email, phone, WhatsApp and address as applicable."), ("Add proof and media", "Upload authorized logo, gallery images, licences, documents and project references."), ("Review and submit", "Verify the summary and complete the publication authorization step.")):
+    step(doc, title, detail)
+heading(doc, "Control and result", 2)
+para(doc, "The creator becomes the listing owner. The owner manages the record in My listings; an administrator approves, rejects or places a submitted record on hold. A published contractor may be marked as featured by an administrator.")
 
 page_break(doc)
-heading(doc, "6. Marketplace workflows", 1)
-heading(doc, "Browse and search", 2)
-add_bullet(doc, "Use the marketplace category pages to browse contractors, projects, equipment, materials and opportunities.")
-add_bullet(doc, "Use Search to locate records across the application.")
-add_bullet(doc, "Open a record to view its public details and available contact/application actions.")
-heading(doc, "Create and publish a listing", 2)
-add_step(doc, "Select Add listing", "Choose the appropriate marketplace category.")
-add_step(doc, "Complete each form step", "Provide accurate business, location, contact, commercial and technical details.")
-add_step(doc, "Upload media/documents", "Use relevant, authorized files only.")
-add_step(doc, "Review the summary", "Correct mistakes before publication.")
-add_step(doc, "Verify the email", "Publishing requires a fresh OTP to the listing contact or signed-in email.")
-add_step(doc, "Publish", "Confirm the result from My listings and the public category page.")
-heading(doc, "RFQs and quotations", 2)
-add_bullet(doc, "A new RFQ requires contact details, procurement requirements, delivery information and a fresh OTP before publication.")
-add_bullet(doc, "Vendors can browse RFQs, submit quotations and use the quotation workspace for follow-up messages.")
-add_bullet(doc, "Buyers can manage their RFQs from My RFQs; vendors can manage responses from My quotations.")
-callout(doc, "One-time authorization", "The RFQ/listing publication OTP is separate from ordinary sign-in and is consumed by the relevant publishing action.", "blue")
+heading(doc, "4. Module: Projects & Tenders")
+module_intro(doc, "Publish project/tender opportunities and manage applications from interested companies.", "Project owners, applicants, public visitors and administrators", "/projects-tenders and Add listing → Project / Tender")
+heading(doc, "Listing capabilities", 2)
+for item in ("Search and browse projects and tenders by relevant marketplace data.", "Show title, type, status, summary, description, budget/value, deadline, client, location, sectors and supporting documents.", "Open an application flow from an eligible published project/tender detail page."):
+    bullet(doc, item)
+heading(doc, "Applicant workflow", 2)
+for title, detail in (("Open a project", "Review the description, deadline, requirements and files."), ("Select Apply", "Sign in if required and complete company, contact and proposed-role information."), ("Submit", "The application is associated with the applicant account and project."), ("Track", "Use My applications to view status and timeline; edit while submitted or withdraw while still active.")):
+    step(doc, title, detail)
+heading(doc, "Project-owner workflow", 2)
+for item in ("Use Received applications to review applicants for owned project listings.", "Open application details and move eligible applications to shortlisted, accepted or rejected.", "Application statuses include submitted, under review, shortlisted, accepted, rejected and withdrawn."):
+    bullet(doc, item)
+callout(doc, "Ownership", "Applicants manage their own applications; project owners review applications received for projects they own; administrators can inspect applications across the platform.")
 
 page_break(doc)
-heading(doc, "7. Account security and client acceptance checklist", 1)
-heading(doc, "Change an administrator password", 2)
-add_step(doc, "Open Change password", "Use the Admin navigation.")
-add_step(doc, "Enter the current password", "The application validates it before accepting a replacement.")
-add_step(doc, "Enter and confirm the new password", "Use at least eight characters with a letter and a number.")
-add_step(doc, "Submit the change", "Other active sessions are signed out.")
-heading(doc, "Safe testing practices", 2)
-add_bullet(doc, "Use the designated test accounts; do not share credentials between client and development testers.")
-add_bullet(doc, "Use clearly labeled test listings and remove or close them after acceptance testing.")
-add_bullet(doc, "Do not upload real confidential documents during testing.")
-add_bullet(doc, "Sign out after using a shared computer.")
+heading(doc, "5. Module: RFQ Marketplace")
+module_intro(doc, "Allow buyers to request quotations and suppliers to submit, discuss and track commercial offers.", "Buyers, suppliers and administrators", "/rfqs, My RFQs and My Quotations")
+heading(doc, "Buyer workflow", 2)
+for title, detail in (("Start an RFQ", "Provide contact details and request a fresh RFQ-purpose email code."), ("Describe the requirement", "Enter project, category, material/service, location, dates, quantity, unit, specifications, address, budget and notes."), ("Attach documents", "Add BOQ, drawings, specifications or other relevant files."), ("Review and publish", "Verify the details and consume the one-time authorization code."), ("Manage responses", "Use My RFQs to search owned RFQs, review quotations and control the RFQ lifecycle.")):
+    step(doc, title, detail)
+heading(doc, "Supplier workflow", 2)
+for title, detail in (("Browse RFQs", "Open a relevant request and review its requirements and closing date."), ("Submit a quotation", "Provide supplier/company details, pricing, delivery time, validity, warranty, payment terms, remarks and quotation file where applicable."), ("Track the offer", "Use My Quotations to view, edit eligible offers or withdraw an active submission."), ("Continue the conversation", "Use the quotation workspace for status history, messages and files.")):
+    step(doc, title, detail)
+heading(doc, "Quotation outcomes", 2)
+label_table(doc, [("Draft / Submitted", "Supplier is preparing or has submitted the quotation."), ("Under review / Shortlisted", "Buyer is evaluating or has shortlisted the offer."), ("Awarded", "Supplier can continue the awarded workflow and download the award letter where available."), ("Rejected / Withdrawn", "Buyer declined the quotation or supplier withdrew it.")], header=("Status", "Meaning"))
+
+page_break(doc)
+heading(doc, "6. Module: Equipment Marketplace")
+module_intro(doc, "Advertise and discover construction or industrial equipment offered for sale, rent or wanted.", "Equipment owners, rental/sales companies, buyers and administrators", "/equipment-marketplace and Add listing → Equipment")
+heading(doc, "Directory and listing information", 2)
+for item in ("Browse and search equipment records, including featured items.", "Identify listing intent such as sale, rent or wanted through the listing data.", "Review equipment type, title, description, brand, model, year, condition, price, location and availability information.", "View images and seller contact channels supplied with the record."):
+    bullet(doc, item)
+heading(doc, "Publishing workflow", 2)
+for title, detail in (("Choose Equipment", "Open the listing-type selector."), ("Describe the asset", "Provide category/type, commercial terms, specifications, condition and location."), ("Add media and contacts", "Upload authorized images and provide accurate contact information."), ("Review and submit", "Complete the authorization step and send the listing for moderation.")):
+    step(doc, title, detail)
+heading(doc, "Control and result", 2)
+para(doc, "The owner can access the equipment record from My listings. Administrators control publication status and may feature a published equipment listing. Rejected or on-hold equipment cannot remain featured.")
+
+page_break(doc)
+heading(doc, "7. Module: Construction & Industrial Materials")
+module_intro(doc, "Connect suppliers and buyers around construction and industrial material listings.", "Material suppliers, procurement teams, buyers and administrators", "/construction-materials and Add listing → Material")
+heading(doc, "Directory and listing information", 2)
+for item in ("Browse/search material records and open individual material details.", "Review material name, category/type, description, specifications, unit, price/terms, availability, country and city.", "View supplier identity, contact methods, images and supporting documents where provided."):
+    bullet(doc, item)
+heading(doc, "Publishing workflow", 2)
+for title, detail in (("Choose Material", "Open Add listing and select the materials flow."), ("Enter the offering", "Add the material identity, category, description, specification and commercial details."), ("Add location and supplier contacts", "Provide accurate marketplace and communication details."), ("Upload media/documents", "Use files the publisher is authorized to distribute."), ("Review and submit", "Verify the final summary and complete publication authorization.")):
+    step(doc, title, detail)
+heading(doc, "Related procurement path", 2)
+para(doc, "A buyer needing competitive supplier responses can use the RFQ module instead of relying only on direct listing contact. This keeps a formal request and received quotations in the buyer workspace.")
+
+page_break(doc)
+heading(doc, "8. Module: Business Opportunities")
+module_intro(doc, "Publish and discover businesses for sale, businesses wanted and investment opportunities.", "Business owners, investors, opportunity seekers and administrators", "/business-opportunities and Add listing → Business Opportunity")
+heading(doc, "Directory and listing information", 2)
+for item in ("Browse and search opportunity records and view individual details.", "Review opportunity type, category, title, business/summary information, asking price or investment data, location and contact details.", "View images/documents provided for the opportunity and save relevant records while signed in."):
+    bullet(doc, item)
+heading(doc, "Publishing workflow", 2)
+for title, detail in (("Choose Business Opportunity", "Open the corresponding listing flow."), ("Describe the opportunity", "State the opportunity type, business details, value/asking price and location clearly."), ("Add contact and media", "Provide accurate communication details and authorized supporting content."), ("Review and submit", "Complete the email authorization and send the record for moderation.")):
+    step(doc, title, detail)
+callout(doc, "Content quality", "Do not publish confidential financial information, personal documents or claims that cannot be supported. Administrators should review opportunity descriptions and attachments before approval.", "amber")
+
+page_break(doc)
+heading(doc, "9. Account workspace and shared features")
+para(doc, "The account workspace brings together records and activity associated with the signed-in user.")
+label_table(doc, [("My listings", "View owned contractor, project, equipment, material and business-opportunity records; open eligible records for editing or deletion."), ("Saved listings", "Review marketplace items saved by the account."), ("My RFQs", "Buyer workspace for requests created by the account and quotations received."), ("My Quotations", "Supplier workspace for submitted offers, status and follow-up."), ("My Applications", "Applicant view of submitted project/tender applications and timelines."), ("Received Applications", "Project-owner view of applications received for owned projects."), ("Messages", "Conversations connected to RFQ quotations."), ("Notifications", "RFQ/quotation status activity relevant to the user."), ("Profile & security", "Personal/company details, profile image and password management.")], header=("Workspace", "Purpose"))
+heading(doc, "Global search", 2)
+para(doc, "Unified Global Search covers contractors, projects, RFQs, equipment, materials and business opportunities. Users can combine a keyword with module/category and supported location/type filters, then open the matching public record.")
+heading(doc, "Contact form", 2)
+para(doc, "Visitors can send a general enquiry from Contact Us. Submissions are stored for administrator review. Contact information and message content should be treated as confidential business data.")
+
+page_break(doc)
+heading(doc, "10. Administration module")
+module_intro(doc, "Provide platform-level visibility and controlled moderation for authorized administrators.", "Users whose account role is admin", "/admin")
+heading(doc, "Administration areas", 2)
+label_table(doc, [("Overview", "Marketplace totals, registered users, blocked users and listing-status summaries."), ("Categories", "Counts by marketplace category and listing status."), ("Users", "Review non-admin accounts, verification state and listing counts; block or unblock access."), ("All listings", "Review records across all six modules, moderate submitted records and feature eligible published listings."), ("Project applications", "Filter and inspect applications submitted across projects and tenders."), ("Contact submissions", "Read public contact messages and use supplied contact channels."), ("Security", "Change the administrator password and invalidate other sessions.")], header=("Admin area", "Responsibility"))
+heading(doc, "Moderation workflow", 2)
+for title, detail in (("Locate the record", "Confirm listing type, title/reference, owner and current status."), ("Inspect content", "Check business details, location, contacts, images and documents."), ("Decide", "Approve to publish, reject, or place the record on hold."), ("Feature if appropriate", "Only a published non-RFQ listing can be featured."), ("Verify", "Confirm the admin status badge, category totals and public visibility.")):
+    step(doc, title, detail)
+callout(doc, "Admin safeguard", "Every administrator mutation performs a server-side admin-role check. User blocking also prevents targeting the current administrator or another admin account.")
+
+page_break(doc)
+heading(doc, "11. Support, privacy and client acceptance")
+heading(doc, "Safe operating practices", 2)
+for item in ("Never share passwords, OTPs, reset links or session cookies.", "Use clearly labelled test records and remove or close them after acceptance testing.", "Do not upload real confidential drawings, financial statements or identity documents during testing.", "Confirm the recipient and business need before downloading or forwarding application and quotation files.", "Sign out after using a shared device."):
+    bullet(doc, item)
 heading(doc, "Client acceptance checklist", 2)
-two_col_table(doc, [
-    ("☐", "Receive an OTP at the intended admin email and complete first-time activation."),
-    ("☐", "Open every Admin navigation page without an authorization error."),
-    ("☐", "Create, review and publish one clearly marked test listing."),
-    ("☐", "Verify dashboard/category counts after the listing action."),
-    ("☐", "Create a normal test user; block and then restore it."),
-    ("☐", "Submit and inspect a project application."),
-    ("☐", "Submit and review a public contact-form message."),
-    ("☐", "Change the admin password and confirm other sessions are signed out."),
-], widths=(600, 8760), header=("Done", "Acceptance test"))
-callout(doc, "Support information", "When reporting an issue, include the page, action, expected result, actual result, time of occurrence and a screenshot—never include passwords or OTPs.")
+label_table(doc, [("☐", "Complete OTP activation, create a password, sign out and sign in again."), ("☐", "Confirm a normal user cannot open administrator pages or moderate records."), ("☐", "Create one clearly marked test listing in each required marketplace module."), ("☐", "Approve one listing and confirm its public visibility and search result."), ("☐", "Create an RFQ, submit a supplier quotation and exercise the status/message workflow."), ("☐", "Submit a project application and review it from the project-owner workspace."), ("☐", "Block a normal test user, verify restricted activity, then restore the account."), ("☐", "Submit a Contact Us message and verify it appears in Admin."), ("☐", "Change the admin password and confirm other sessions are signed out.")], widths=(600, 8760), header=("Done", "Acceptance test"))
+heading(doc, "Issue reporting", 2)
+para(doc, "Include the page or module, signed-in role, action performed, expected result, actual result, date/time and a screenshot. Do not include passwords, OTPs, reset links or confidential uploaded files.")
+callout(doc, "Document basis", "Prepared from the current GulfInfraHub application structure and implemented workflows as of August 2026.")
 
 OUT.parent.mkdir(parents=True, exist_ok=True)
 doc.save(OUT)
