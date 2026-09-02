@@ -1,4 +1,5 @@
 import {
+  faBoxArchive,
   faCheck,
   faClock,
   faFilePen,
@@ -76,6 +77,11 @@ export function StatusBadge({ status }: { status: string }) {
       label: "Draft",
       icon: faFilePen,
       className: "border-slate-200 bg-slate-100 text-slate-700",
+    },
+    archived: {
+      label: "Archived",
+      icon: faBoxArchive,
+      className: "border-violet-200 bg-violet-50 text-violet-700",
     },
     closed: {
       label: "Closed",

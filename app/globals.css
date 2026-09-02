@@ -1,6 +1,52 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap");
 @import "tailwindcss";
 
+@keyframes approval-toast-in {
+  from { opacity: 0; transform: translateY(24px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes approval-check-pop {
+  0% { transform: scale(0.45) rotate(-18deg); }
+  65% { transform: scale(1.12) rotate(4deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+@keyframes approval-progress {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+@keyframes submission-card-in {
+  from { opacity: 0; transform: translateY(28px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes submission-ring-out {
+  from { opacity: 0.7; transform: scale(0.8); }
+  to { opacity: 0; transform: scale(1.65); }
+}
+
+@keyframes submission-spark {
+  0% { opacity: 0; transform: translateY(12px) scale(0.5) rotate(0); }
+  45% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-34px) scale(1.1) rotate(45deg); }
+}
+
+.approval-toast { animation: approval-toast-in 420ms cubic-bezier(.2,.8,.2,1) both; }
+.approval-check { animation: approval-check-pop 520ms cubic-bezier(.2,.9,.25,1.25) 80ms both; }
+.approval-progress { transform-origin: left; animation: approval-progress 4.5s linear both; }
+.submission-success { animation: submission-card-in 480ms cubic-bezier(.2,.8,.2,1) both; }
+.submission-check { animation: approval-check-pop 600ms cubic-bezier(.2,.9,.25,1.25) 120ms both; }
+.submission-ring { animation: submission-ring-out 900ms ease-out 300ms both; }
+.submission-spark { position: absolute; top: 4.5rem; color: #f4b400; font-size: 1.1rem; animation: submission-spark 1.2s ease-out 350ms both; }
+.submission-spark-left { left: 26%; }
+.submission-spark-right { right: 26%; animation-delay: 520ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .approval-toast, .approval-check, .approval-progress, .submission-success, .submission-check, .submission-ring, .submission-spark { animation: none; }
+}
+
 :root {
   --background: #f6f8fb;
   --foreground: #1e293b;

@@ -92,7 +92,7 @@ export async function moderateListing(
   } else {
     current = await prisma.rfq.findUnique({ where: { id }, select: { status: true } });
   }
-  if (!current || current.status === "draft") throw new Error("LISTING_NOT_SUBMITTED");
+  if (!current || ["draft", "archived"].includes(current.status)) throw new Error("LISTING_NOT_SUBMITTED");
 
   const status =
     decision === "approve"
@@ -154,6 +154,38 @@ export async function moderateListing(
   revalidatePath("/my-listings");
   revalidatePath(publicPath);
   if (detailPath) revalidatePath(detailPath);
+}
+
+export async function archiveDraftListing(type: AdminListingType, id: string) {
+  const admin = await requireAdmin();
+  if (!admin) throw new Error("UNAUTHORIZED");
+  if (!listingTypes.has(type) || !id) throw new Error("INVALID_LISTING");
+
+  if (type === "contractor") {
+    const result = await prisma.contractor.updateMany({ where: { id, listingStatus: "draft" }, data: { listingStatus: "archived", draftTokenHash: null, featured: false } });
+    if (!result.count) throw new Error("LISTING_NOT_DRAFT");
+  } else if (type === "project") {
+    const result = await prisma.projectTender.updateMany({ where: { id, listingStatus: "draft" }, data: { listingStatus: "archived", draftTokenHash: null, featured: false } });
+    if (!result.count) throw new Error("LISTING_NOT_DRAFT");
+  } else if (type === "equipment") {
+    const result = await prisma.equipment.updateMany({ where: { id, listingStatus: "draft" }, data: { listingStatus: "archived", draftTokenHash: null, featured: false } });
+    if (!result.count) throw new Error("LISTING_NOT_DRAFT");
+  } else if (type === "material") {
+    const result = await prisma.material.updateMany({ where: { id, listingStatus: "draft" }, data: { listingStatus: "archived", draftTokenHash: null, featured: false } });
+    if (!result.count) throw new Error("LISTING_NOT_DRAFT");
+  } else if (type === "business") {
+    const result = await prisma.businessOpportunity.updateMany({ where: { id, listingStatus: "draft" }, data: { listingStatus: "archived", draftTokenHash: null, featured: false } });
+    if (!result.count) throw new Error("LISTING_NOT_DRAFT");
+  } else {
+    const result = await prisma.rfq.updateMany({ where: { id, status: "draft" }, data: { status: "archived" } });
+    if (!result.count) throw new Error("LISTING_NOT_DRAFT");
+  }
+
+  revalidatePath("/admin/listings");
+  revalidatePath("/admin/overview");
+  revalidatePath("/admin/categories");
+  revalidatePath("/my-listings");
+  revalidatePath("/my-rfqs");
 }
 
 export async function setUserBlocked(userId: string, shouldBlock: boolean, data: FormData) {

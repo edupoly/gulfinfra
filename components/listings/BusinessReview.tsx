@@ -2,13 +2,13 @@
 
 import { publishBusiness, type BusinessPublishState, type BusinessReviewData } from "@/app/add-listing/business-actions";
 import { Progress } from "@/components/listings/ProjectListingForm";
-import Link from "next/link";
 import { useActionState } from "react";
 import { ListingPublishGate } from "@/components/auth/ListingPublishGate";
+import { ListingSubmissionSuccess } from "@/components/listings/ListingSubmissionSuccess";
 
 export function BusinessReview({ opportunityId, editToken, review }: { opportunityId: string; editToken: string; review: BusinessReviewData }) {
   const [state, action, pending] = useActionState(publishBusiness, { success: false, message: "" } satisfies BusinessPublishState);
-  if (state.success && state.slug) return <section className="w-full rounded-[38px] border border-slate-200 bg-white px-5 py-10 shadow-[0_18px_60px_rgba(15,23,42,0.08)] sm:px-10 sm:py-14 lg:px-20"><Progress activeStep={4} complete /><div className="mx-auto mt-16 max-w-2xl rounded-3xl border border-emerald-200 bg-emerald-50 px-6 py-12 text-center"><div className="mx-auto grid size-16 place-items-center rounded-full bg-emerald-600 text-3xl font-black text-white">✓</div><p className="mt-6 text-sm font-black uppercase tracking-[0.2em] text-emerald-700">Submitted for review</p><h1 className="mt-3 text-3xl font-black text-[#0b1f3a] sm:text-4xl">Your listing is awaiting approval</h1><p className="mt-4 text-lg text-slate-600">{state.message}</p><Link href="/my-listings" className="mt-7 inline-flex rounded-full bg-[#0b1f3a] px-7 py-3 font-black text-white">View my listings →</Link></div></section>;
+  if (state.success && state.slug) return <section className="w-full rounded-[38px] border border-slate-200 bg-white px-5 py-10 shadow-[0_18px_60px_rgba(15,23,42,0.08)] sm:px-10 sm:py-14 lg:px-20"><Progress activeStep={4} complete /><ListingSubmissionSuccess message={state.message} /></section>;
   return <section className="w-full rounded-[38px] border border-slate-200 bg-white px-5 py-10 shadow-[0_18px_60px_rgba(15,23,42,0.08)] sm:px-10 sm:py-14 lg:px-20"><Progress activeStep={4} /><div className="mx-auto mt-12 max-w-4xl text-center"><p className="text-sm font-black uppercase tracking-[0.2em] text-amber-600">Step 4 of 4 · Review</p><h1 className="mt-3 text-3xl font-black text-[#0b1f3a] sm:text-5xl">Review Business Opportunity</h1><p className="mt-4 text-lg text-slate-500">Confirm the opportunity and contact details before publishing.</p></div>
     <div className="mx-auto mt-10 max-w-5xl space-y-6">
       <Section title="Opportunity"><Item label="Title" value={review.title} wide /><Item label="Type" value={review.section} /><Item label="Category" value={review.category} /><Item label="Investment / price" value={review.investment} /><Item label="Location" value={`${review.city}, ${review.country}`} /><Item label="Description" value={review.description} wide /></Section>

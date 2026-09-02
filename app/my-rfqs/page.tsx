@@ -16,7 +16,7 @@ export default async function MyRfqsPage({
   if (!user) redirect("/login");
   const { q = "", status = "" } = await searchParams;
   const term = q.trim().slice(0, 100);
-  const allowedStatuses = ["draft", "published", "closed", "awarded", "cancelled"];
+  const allowedStatuses = ["draft", "pending", "published", "on_hold", "rejected", "closed", "awarded", "cancelled"];
   const rfqs = await prisma.rfq.findMany({
     where: {
       buyerId: user.id,
@@ -42,7 +42,7 @@ export default async function MyRfqsPage({
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link href={`/rfqs/${rfq.id}`} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-black text-blue-700">View</Link>
                 {!["awarded", "cancelled"].includes(rfq.status) && <Link href={`/rfqs?edit=${rfq.id}`} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-black text-slate-700">Edit</Link>}
-                {rfq.status === "draft" && <form action={setRfqStatus.bind(null, rfq.id, "published")}><button className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-black text-white">Publish</button></form>}
+                {rfq.status === "draft" && <form action={setRfqStatus.bind(null, rfq.id, "published")}><button className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-black text-white">Submit for approval</button></form>}
                 {rfq.status === "published" && <form action={setRfqStatus.bind(null, rfq.id, "closed")}><button className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-black text-white">Close RFQ</button></form>}
               </div>
               <section className="mt-5 border-t border-slate-200 pt-5">

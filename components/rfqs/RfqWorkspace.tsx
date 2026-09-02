@@ -650,7 +650,7 @@ function RfqFormModal({
                 <div className="flex gap-3">
                   <button form="rfq-form" name="intent" value="draft" disabled={pending} className="rounded-xl border border-slate-300 px-6 py-3 font-bold text-slate-700">Save Draft</button>
                   <button form="rfq-form" name="intent" value="published" disabled={pending} className="rounded-xl bg-amber-400 px-6 py-3 font-black text-slate-950">
-                    {pending ? "Saving…" : rfq ? "Update & Publish" : "Publish RFQ"}
+                    {pending ? "Saving…" : rfq ? "Update & Submit for Approval" : "Submit RFQ for Approval"}
                   </button>
                 </div>
               )}

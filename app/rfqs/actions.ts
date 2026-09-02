@@ -41,7 +41,7 @@ export async function saveRfq(
       .split(/\r?\n|,/)
       .map((item) => item.trim())
       .filter(Boolean),
-    status: text(data, "intent") === "draft" ? "draft" : "published",
+    status: text(data, "intent") === "draft" ? "draft" : "pending",
   };
   const errors: Record<string, string> = {};
 
@@ -190,7 +190,7 @@ export async function setRfqStatus(id: string, status: "published" | "closed") {
   if (!user || user.blockedAt) return;
   await prisma.rfq.updateMany({
     where: { id, buyerId: user.id, status: { notIn: ["awarded", "cancelled"] } },
-    data: { status },
+    data: { status: status === "published" ? "pending" : status },
   });
   revalidatePath("/rfqs");
   revalidatePath("/my-rfqs");

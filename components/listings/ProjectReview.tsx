@@ -6,9 +6,9 @@ import {
   type ProjectReviewData,
 } from "@/app/add-listing/project-actions";
 import { Progress } from "@/components/listings/ProjectListingForm";
-import Link from "next/link";
 import { useActionState } from "react";
 import { ListingPublishGate } from "@/components/auth/ListingPublishGate";
+import { ListingSubmissionSuccess } from "@/components/listings/ListingSubmissionSuccess";
 
 export function ProjectReview({
   projectId,
@@ -25,7 +25,7 @@ export function ProjectReview({
   } satisfies ProjectPublishState);
 
   if (state.success && state.slug) {
-    return <section className="w-full rounded-[38px] border border-slate-200 bg-white px-5 py-10 shadow-[0_18px_60px_rgba(15,23,42,0.08)] sm:px-10 sm:py-14 lg:px-20"><Progress activeStep={4} complete /><div className="mx-auto mt-16 max-w-2xl rounded-3xl border border-emerald-200 bg-emerald-50 px-6 py-12 text-center"><div className="mx-auto grid size-16 place-items-center rounded-full bg-emerald-600 text-3xl font-black text-white">✓</div><p className="mt-6 text-sm font-black uppercase tracking-[0.2em] text-emerald-700">Submitted for review</p><h1 className="mt-3 text-3xl font-black text-[#0b1f3a] sm:text-4xl">Your listing is awaiting approval</h1><p className="mt-4 text-lg text-slate-600">{state.message}</p><Link href="/my-listings" className="mt-7 inline-flex rounded-full bg-[#0b1f3a] px-7 py-3 font-black text-white">View my listings →</Link></div></section>;
+    return <section className="w-full rounded-[38px] border border-slate-200 bg-white px-5 py-10 shadow-[0_18px_60px_rgba(15,23,42,0.08)] sm:px-10 sm:py-14 lg:px-20"><Progress activeStep={4} complete /><ListingSubmissionSuccess message={state.message} /></section>;
   }
 
   return <section className="w-full rounded-[38px] border border-slate-200 bg-white px-5 py-10 shadow-[0_18px_60px_rgba(15,23,42,0.08)] sm:px-10 sm:py-14 lg:px-20">
