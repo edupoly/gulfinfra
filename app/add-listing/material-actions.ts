@@ -5,15 +5,6 @@ import { createHash, randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { BLOCKED_ACTIVITY_MESSAGE, getActivityRestriction, getCurrentUser } from "@/lib/auth";
 
-const materialTypes = new Map([
-  ["cement-concrete", "Cement & Concrete"], ["structural-steel", "Structural Steel"],
-  ["blocks-masonry", "Blocks & Masonry"], ["waterproofing", "Waterproofing"],
-  ["finishing-materials", "Finishing Materials"], ["pipes-valves", "Pipes & Valves"],
-  ["electrical-supplies", "Electrical Supplies"], ["hvac-components", "HVAC Components"],
-  ["industrial-chemicals", "Industrial Chemicals"], ["safety-products", "Safety Products"],
-]);
-const constructionSlugs = new Set(["cement-concrete", "structural-steel", "blocks-masonry", "waterproofing", "finishing-materials"]);
-
 export type MaterialDraftState = { success: boolean; message: string; materialId?: string; editToken?: string; errors?: Record<string, string> };
 export type MaterialReviewData = {
   slug: string; name: string; materialGroup: string; materialType: string; listingType: string;
@@ -29,7 +20,7 @@ export type MaterialPublishState = { success: boolean; message: string; slug?: s
 const text = (data: FormData, name: string) => String(data.get(name) ?? "").trim();
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
 const split = (value: string) => [...new Set(value.split(",").map((item) => item.trim()).filter(Boolean))];
-const isUrl = (value: string) => { try { return ["http:", "https:"].includes(new URL(value).protocol); } catch { return false; } };
+const isUrl = (value: string) => value.startsWith("/api/listing-documents/") || value.startsWith("/api/listing-images/") || (() => { try { return ["http:", "https:"].includes(new URL(value).protocol); } catch { return false; } })();
 const parseSpecs = (value: string) => value.split("\n").map((line) => line.trim()).filter(Boolean).map((line) => { const [label, ...rest] = line.split(":"); return { label: label.trim(), value: rest.join(":").trim() }; }).filter((item) => item.label && item.value);
 const slugify = (value: string) => `${value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 70) || "material"}-${crypto.randomUUID().slice(0, 8)}`;
 
@@ -47,11 +38,10 @@ export async function saveMaterialDraft(_state: MaterialDraftState, data: FormDa
     whatsapp: text(data, "whatsapp"), email: text(data, "email").toLowerCase(),
   };
   const errors: Record<string, string> = {};
-  const materialType = materialTypes.get(values.materialTypeSlug);
-  const expectedGroup = constructionSlugs.has(values.materialTypeSlug) ? "Construction Materials" : "Industrial Materials";
+  const materialType = await prisma.materialTypeOption.findUnique({ where: { slug: values.materialTypeSlug }, select: { name: true, groupName: true } });
   if (values.name.length < 5 || values.name.length > 160) errors.name = "Enter a name between 5 and 160 characters.";
   if (!["Construction Materials", "Industrial Materials"].includes(values.materialGroup)) errors.materialGroup = "Select a material group.";
-  if (!materialType || values.materialGroup !== expectedGroup) errors.materialType = "Select a valid material type.";
+  if (!materialType || values.materialGroup !== materialType.groupName) errors.materialType = "Select a valid material type.";
   if (!["For Sale", "Supplier", "Buyer"].includes(values.listingType)) errors.listingType = "Select sale, supplier, or buyer.";
   if (!values.supplier) errors.supplier = "Enter the supplier, company, or buyer name.";
   if (!values.priceRange) errors.priceRange = "Enter a price range or buying budget.";
@@ -79,7 +69,7 @@ export async function saveMaterialDraft(_state: MaterialDraftState, data: FormDa
       data: {
         slug: slugify(values.name), categorySlug: category.slug, listingStatus: "draft",
         draftTokenHash: hash(editToken), name: values.name, materialGroup: values.materialGroup,
-        materialType: materialType!, materialTypeSlug: values.materialTypeSlug,
+        materialType: materialType!.name, materialTypeSlug: values.materialTypeSlug,
         listingType: values.listingType, countryCode: country.code, citySlug: city.slug,
         supplier: values.supplier, priceRange: values.priceRange, minimumOrder: values.minimumOrder,
         availability: values.availability, leadTime: values.leadTime, compliance: values.compliance,
@@ -113,6 +103,7 @@ async function loadReview(id: string): Promise<MaterialReviewData | null> {
 export async function saveMaterialMedia(_state: MaterialMediaState, data: FormData): Promise<MaterialMediaState> {
   const restriction = await getActivityRestriction();
   if (restriction) return { success: false, message: restriction };
+  if (data.getAll("listingUploadPending").some(Boolean)) return { success: false, message: "Wait for all uploads to finish before continuing." };
   const materialId = text(data, "materialId"), editToken = text(data, "editToken"), image = text(data, "image");
   const galleryImages = data.getAll("galleryImages").map(String).map((item) => item.trim()).filter(Boolean);
   const names = data.getAll("documentNames").map(String), types = data.getAll("documentTypes").map(String), urls = data.getAll("documentUrls").map(String);

@@ -21,20 +21,24 @@ import { getAllEquipment } from "@/services/equipment-service";
 import { getAllMaterials } from "@/services/material-service";
 import { getAllProjectTenders } from "@/services/project-tender-service";
 import { getRfqs } from "@/app/rfqs/data";
+import { getLocations } from "@/services/location-service";
+import { getMarketplaceTaxonomy } from "@/services/taxonomy-service";
 
 export default async function HomePage() {
-  const [contractors, projects, equipment, materials, opportunities, rfqs] = await Promise.all([
+  const [contractors, projects, equipment, materials, opportunities, rfqs, locations, taxonomy] = await Promise.all([
     getAllContractors(),
     getAllProjectTenders(),
     getAllEquipment(),
     getAllMaterials(),
     getAllBusinessOpportunities(),
     getRfqs(),
+    getLocations(),
+    getMarketplaceTaxonomy(),
   ]);
 
   return (
     <main className="w-full">
-      <HomeHero />
+      <HomeHero countries={locations.countries} cities={locations.cities} taxonomy={taxonomy} />
       <GccCountries />
       {/* <section id="categories" className="mx-auto max-w-7xl space-y-4 px-4 py-10 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">

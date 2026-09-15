@@ -7,9 +7,7 @@ import { SaveListingButton } from "@/components/listings/SaveListingButton";
 import type { BusinessOpportunity } from "@/lib/types";
 
 const sections = ["Businesses for Sale", "Businesses Wanted", "Investment Opportunities"];
-const categories = ["Restaurants", "Cafes", "Workshops", "Factories", "Trading Companies", "Car Washes", "Retail Shops", "Franchise Businesses"];
-
-export function BusinessOpportunityBrowser({ opportunities, initialSearch, savedSlugs }: { opportunities: BusinessOpportunity[]; initialSearch: string; savedSlugs: string[] }) {
+export function BusinessOpportunityBrowser({ opportunities, categories, initialSearch, savedSlugs }: { opportunities: BusinessOpportunity[]; categories: string[]; initialSearch: string; savedSlugs: string[] }) {
   const [search, setSearch] = useState(initialSearch);
   const [selectedSections, setSelectedSections] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);

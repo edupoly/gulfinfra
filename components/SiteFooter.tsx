@@ -8,11 +8,12 @@ import {
 } from "@fortawesome/free-brands-svg-icons";
 
 const directoryLinks = [
-  { label: "Contractors Directory", href: "/contractors" },
+  { label: "Contractors", href: "/contractors" },
   { label: "Projects & Tenders", href: "/projects-tenders" },
-  { label: "RFQ Board", href: "/rfqs" },
-  { label: "Heavy Machinery", href: "/equipment-marketplace" },
-  { label: "Construction Materials", href: "/construction-materials" },
+  { label: "RFQs", href: "/rfqs" },
+  { label: "Equipment Marketplace", href: "/equipment-marketplace" },
+  { label: "Construction & Industrial Materials", href: "/construction-materials" },
+  { label: "Business Opportunities", href: "/business-opportunities" },
 ] as const;
 
 const companyLinks = [
@@ -40,7 +41,7 @@ export function SiteFooter() {
             <span className="flex flex-col text-left leading-none">
               <span className="text-[1.45rem] font-black tracking-[-0.02em]">
                 <span className="text-white">GULF</span>
-                <span className="text-amber-400">INFRAHUB</span>
+                <span className="text-amber-400">BUILDHUB</span>
               </span>
               <span className="mt-1 text-[0.58rem] font-medium tracking-[0.02em] text-white/75">
                 Gulf Construction &amp; Business Marketplace

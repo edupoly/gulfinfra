@@ -53,6 +53,7 @@ export function ListingTypeSelector({
   equipmentTypes,
   constructionMaterialTypes,
   industrialMaterialTypes,
+  businessCategories,
   countries,
   cities,
 }: {
@@ -61,6 +62,7 @@ export function ListingTypeSelector({
   equipmentTypes: Array<{ slug: string; name: string }>;
   constructionMaterialTypes: Array<{ slug: string; name: string }>;
   industrialMaterialTypes: Array<{ slug: string; name: string }>;
+  businessCategories: Array<{ slug: string; name: string }>;
   countries: Array<{ code: string; name: string }>;
   cities: Array<{ slug: string; name: string; countryCode: string }>;
 }) {
@@ -128,6 +130,7 @@ export function ListingTypeSelector({
   if (activeForm === "business") {
     return (
       <BusinessListingForm
+        businessCategories={businessCategories}
         countries={countries}
         cities={cities}
         onBack={() => {

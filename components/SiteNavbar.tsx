@@ -30,11 +30,11 @@ export function SiteNavbar({
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0b1f3a]/[0.98] text-white shadow-lg backdrop-blur-xl">
       <div className="mx-auto flex min-h-[100px] w-full max-w-[1440px] items-center justify-between gap-5 px-6">
-        <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="GulfInfraHub home" onClick={() => setOpen(false)}>
+        <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="GulfBuildHub home" onClick={() => setOpen(false)}>
           <SkylineLogo />
           <span className="flex flex-col leading-none">
             <span className="font-[family-name:var(--font-headings)] text-[1.18rem] font-black tracking-[-0.03em] sm:text-[1.45rem]">
-              GULF<span className="text-amber-400">INFRAHUB</span>
+              GULF<span className="text-amber-400">BUILDHUB</span>
             </span>
             <span className="mt-1 text-[0.52rem] font-medium tracking-wide text-white/70 sm:text-[0.58rem]">
               Gulf Construction & Business Marketplace

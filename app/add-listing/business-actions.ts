@@ -17,7 +17,7 @@ export type BusinessPublishState = { success: boolean; message: string; slug?: s
 
 const text = (data: FormData, name: string) => String(data.get(name) ?? "").trim();
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
-const isUrl = (value: string) => { try { return ["http:", "https:"].includes(new URL(value).protocol); } catch { return false; } };
+const isUrl = (value: string) => value.startsWith("/api/listing-documents/") || value.startsWith("/api/listing-images/") || (() => { try { return ["http:", "https:"].includes(new URL(value).protocol); } catch { return false; } })();
 const slugify = (value: string) => `${value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 70) || "opportunity"}-${crypto.randomUUID().slice(0, 8)}`;
 
 export async function saveBusinessDraft(_state: BusinessDraftState, data: FormData): Promise<BusinessDraftState> {
@@ -32,7 +32,8 @@ export async function saveBusinessDraft(_state: BusinessDraftState, data: FormDa
   const errors: Record<string, string> = {};
   if (values.title.length < 5 || values.title.length > 180) errors.title = "Enter a title between 5 and 180 characters.";
   if (!["Businesses for Sale", "Businesses Wanted", "Investment Opportunities"].includes(values.section)) errors.section = "Select a valid opportunity type.";
-  if (!values.category) errors.category = "Enter a business category.";
+  const businessCategory = values.category ? await prisma.businessCategoryOption.findUnique({ where: { name: values.category }, select: { name: true } }) : null;
+  if (!businessCategory) errors.category = "Select a valid business category.";
   if (!values.investment) errors.investment = "Enter the asking price, budget, or investment.";
   if (!values.country) errors.country = "Select a country.";
   if (!values.city) errors.city = "Select a city.";
@@ -81,6 +82,7 @@ async function loadReview(id: string): Promise<BusinessReviewData | null> {
 export async function saveBusinessMedia(_state: BusinessMediaState, data: FormData): Promise<BusinessMediaState> {
   const restriction = await getActivityRestriction();
   if (restriction) return { success: false, message: restriction };
+  if (data.getAll("listingUploadPending").some(Boolean)) return { success: false, message: "Wait for all uploads to finish before continuing." };
   const opportunityId = text(data, "opportunityId"), editToken = text(data, "editToken"), image = text(data, "image");
   const galleryImages = data.getAll("galleryImages").map(String).map((item) => item.trim()).filter(Boolean);
   const names = data.getAll("documentNames").map(String), types = data.getAll("documentTypes").map(String), urls = data.getAll("documentUrls").map(String);

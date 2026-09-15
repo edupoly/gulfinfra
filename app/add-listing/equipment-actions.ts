@@ -21,7 +21,7 @@ export type EquipmentPublishState = { success: boolean; message: string; slug?: 
 
 const text = (data: FormData, name: string) => String(data.get(name) ?? "").trim();
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
-const isUrl = (value: string) => { try { return ["http:", "https:"].includes(new URL(value).protocol); } catch { return false; } };
+const isUrl = (value: string) => value.startsWith("/api/listing-documents/") || value.startsWith("/api/listing-images/") || (() => { try { return ["http:", "https:"].includes(new URL(value).protocol); } catch { return false; } })();
 const slugify = (value: string) => `${value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 70) || "equipment"}-${crypto.randomUUID().slice(0, 8)}`;
 const parseSpecifications = (value: string) => value.split("\n").map((line) => line.trim()).filter(Boolean).map((line) => {
   const [label, ...rest] = line.split(":");
@@ -116,6 +116,7 @@ async function loadReview(id: string): Promise<EquipmentReviewData | null> {
 export async function saveEquipmentMedia(_state: EquipmentMediaState, data: FormData): Promise<EquipmentMediaState> {
   const restriction = await getActivityRestriction();
   if (restriction) return { success: false, message: restriction };
+  if (data.getAll("listingUploadPending").some(Boolean)) return { success: false, message: "Wait for all uploads to finish before continuing." };
   const equipmentId = text(data, "equipmentId"), editToken = text(data, "editToken");
   const images = data.getAll("images").map(String).map((item) => item.trim()).filter(Boolean);
   const names = data.getAll("documentNames").map(String), types = data.getAll("documentTypes").map(String), urls = data.getAll("documentUrls").map(String);

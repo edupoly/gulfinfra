@@ -66,6 +66,7 @@ const hashToken = (token: string) =>
   createHash("sha256").update(token).digest("hex");
 
 function isWebUrl(value: string) {
+  if (value.startsWith("/api/listing-documents/") || value.startsWith("/api/listing-images/")) return true;
   try {
     const url = new URL(value);
     return ["http:", "https:"].includes(url.protocol);
@@ -123,6 +124,7 @@ export async function saveContractorDraft(
   };
 
   const errors: Record<string, string> = {};
+
   const currentYear = new Date().getFullYear();
 
   if (values.name.length < 2 || values.name.length > 120) {
@@ -296,6 +298,9 @@ export async function saveContractorMedia(
 ): Promise<ContractorMediaState> {
   const restriction = await getActivityRestriction();
   if (restriction) return { success: false, message: restriction };
+  if (formData.getAll("listingUploadPending").some(Boolean)) {
+    return { success: false, message: "Wait for all uploads to finish before continuing." };
+  }
   const contractorId = text(formData, "contractorId");
   const editToken = text(formData, "editToken");
   const logoUrl = text(formData, "logoUrl");

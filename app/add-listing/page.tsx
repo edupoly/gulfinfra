@@ -1,16 +1,9 @@
 import type { Metadata } from "next";
 import { ListingTypeSelector } from "@/components/listings/ListingTypeSelector";
-import {
-  cities,
-  constructionMaterialTypes,
-  contractorTypes,
-  countries,
-  equipmentTypes,
-  industrialMaterialTypes,
-  projectTenderTypes,
-} from "@/lib/mock-data";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
+import { getLocations } from "@/services/location-service";
+import { getMarketplaceTaxonomy } from "@/services/taxonomy-service";
 
 export const metadata: Metadata = {
   title: "Add Listing | GulfBuildHub",
@@ -19,6 +12,7 @@ export const metadata: Metadata = {
 
 export default async function AddListingPage() {
   const user = await getCurrentUser();
+  const [{ countries, cities }, taxonomy] = await Promise.all([getLocations(), getMarketplaceTaxonomy()]);
   if (user?.blockedAt) {
     return (
       <main className="grid min-h-[calc(100vh-4rem)] place-items-center bg-[#f4f7fb] px-4 py-12">
@@ -40,12 +34,13 @@ export default async function AddListingPage() {
     <main className="min-h-[calc(100vh-4rem)] bg-[#f4f7fb] px-4 py-8 sm:px-6 sm:py-12 lg:px-10">
       <div className="mx-auto max-w-[1500px]">
         <ListingTypeSelector
-          contractorTypes={contractorTypes}
-          projectTenderTypes={projectTenderTypes}
+          contractorTypes={taxonomy.contractorTypes}
+          projectTenderTypes={taxonomy.projectTenderTypes}
           countries={countries}
-          equipmentTypes={equipmentTypes}
-          constructionMaterialTypes={constructionMaterialTypes}
-          industrialMaterialTypes={industrialMaterialTypes}
+          equipmentTypes={taxonomy.equipmentTypes}
+          constructionMaterialTypes={taxonomy.constructionMaterialTypes}
+          industrialMaterialTypes={taxonomy.industrialMaterialTypes}
+          businessCategories={taxonomy.businessCategories}
           cities={cities}
         />
       </div>

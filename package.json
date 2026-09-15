@@ -12,7 +12,8 @@
     "prisma:push": "prisma db push",
     "db:seed": "node scripts/seed-db.mjs",
     "db:seed-materials": "node scripts/seed-materials.mjs",
-    "db:seed-equipment": "node scripts/seed-equipment.mjs"
+    "db:seed-equipment": "node scripts/seed-equipment.mjs",
+    "db:import-taxonomy": "node scripts/import-master-taxonomy.mjs"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^7.3.1",

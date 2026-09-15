@@ -169,7 +169,7 @@ function SearchField({ label, children }: { label: string; children: React.React
 
 function Select({ name, value, options, allLabel }: { name: string; value?: string; options: Array<{ value: string; label: string }>; allLabel: string }) {
   return (
-    <select name={name} defaultValue={value || ""} className="search-field">
+    <select name={name} defaultValue={value || ""} className="search-field marketplace-select">
       <option value="">{allLabel}</option>
       {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
     </select>

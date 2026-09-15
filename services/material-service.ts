@@ -1,9 +1,5 @@
 import { unstable_cache } from "next/cache";
 import {
-  cities,
-  constructionMaterialTypes,
-  countries,
-  industrialMaterialTypes,
   materialListings,
 } from "@/lib/mock-data";
 import { prisma } from "@/lib/prisma";
@@ -41,16 +37,21 @@ function map(row: NonNullable<Row> & { country: { name: string }; city: { name: 
 }
 
 const cachedLocations = unstable_cache(async () => {
-  const [countryList, cityList] = await Promise.all([
+  const [countryList, cityList, materialTypes] = await Promise.all([
     prisma.country.findMany({ select: { code: true, name: true }, orderBy: { name: "asc" } }),
     prisma.city.findMany({ select: { slug: true, name: true, countryCode: true }, orderBy: { name: "asc" } }),
+    prisma.materialTypeOption.findMany({ select: { slug: true, name: true, groupName: true }, orderBy: { name: "asc" } }),
   ]);
-  return { countries: countryList, cities: cityList };
-}, ["material-locations"], { revalidate: 3600 });
+  return {
+    countries: countryList,
+    cities: cityList,
+    constructionMaterialTypes: materialTypes.filter((item) => item.groupName === "Construction Materials").map(({ slug, name }) => ({ slug, name })),
+    industrialMaterialTypes: materialTypes.filter((item) => item.groupName === "Industrial Materials").map(({ slug, name }) => ({ slug, name })),
+  };
+}, ["material-locations"], { revalidate: 3600, tags: ["material-locations"] });
 
 export async function getMaterialFilters() {
-  const locations = usePrisma ? await cachedLocations() : { countries, cities };
-  return { ...locations, constructionMaterialTypes, industrialMaterialTypes };
+  return cachedLocations();
 }
 
 export async function getAllMaterials(): Promise<MaterialProfile[]> {

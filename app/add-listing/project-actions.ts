@@ -67,6 +67,7 @@ function slugify(value: string) {
 }
 
 function isUrl(value: string) {
+  if (value.startsWith("/api/listing-documents/") || value.startsWith("/api/listing-images/")) return true;
   try {
     return ["http:", "https:"].includes(new URL(value).protocol);
   } catch {
@@ -233,6 +234,7 @@ export async function saveProjectMedia(
 ): Promise<ProjectMediaState> {
   const restriction = await getActivityRestriction();
   if (restriction) return { success: false, message: restriction };
+  if (data.getAll("listingUploadPending").some(Boolean)) return { success: false, message: "Wait for all uploads to finish before continuing." };
   const projectId = text(data, "projectId");
   const editToken = text(data, "editToken");
   const imageUrls = data.getAll("imageUrls").map(String).map((item) => item.trim()).filter(Boolean);

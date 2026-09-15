@@ -5,6 +5,8 @@ import {
   type ContractorMediaState,
 } from "@/app/add-listing/actions";
 import { ContractorReview } from "@/components/listings/ContractorReview";
+import { DocumentDropzone } from "@/components/listings/DocumentDropzone";
+import { ImageDropzone } from "@/components/listings/ImageDropzone";
 import { useActionState } from "react";
 
 export function ContractorMediaForm({
@@ -19,9 +21,6 @@ export function ContractorMediaForm({
     saveContractorMedia,
     initialState,
   );
-  const field =
-    "mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-slate-950 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100";
-
   if (state.success && state.review) {
     return (
       <ContractorReview
@@ -39,9 +38,7 @@ export function ContractorMediaForm({
         <p className="text-sm font-black uppercase tracking-[0.2em] text-amber-600">Step 3 of 4 · Contractors & Services</p>
         <h1 className="mt-3 text-3xl font-black tracking-tight text-[#0b1f3a] sm:text-5xl">Media & Documents</h1>
         <p className="mt-4 text-lg text-slate-500">Add visuals and supporting credentials to strengthen your contractor profile.</p>
-        <p className="mx-auto mt-5 max-w-2xl rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
-          For now, enter hosted file links. Direct file uploads will be connected when cloud storage is configured.
-        </p>
+        <p className="mx-auto mt-5 max-w-2xl rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">Upload images and supporting documents by dragging them into an upload area or choosing them from your device.</p>
       </div>
 
       <form action={formAction} className="mx-auto mt-10 max-w-5xl space-y-8">
@@ -49,52 +46,17 @@ export function ContractorMediaForm({
         <input type="hidden" name="editToken" value={editToken} />
 
         <MediaSection title="Company logo" description="Use a square, high-resolution logo on a white or transparent background.">
-          <label>
-            <span className="font-bold text-slate-800">Logo URL</span>
-            <input name="logoUrl" type="url" defaultValue="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab" placeholder="https://..." className={field} />
-            {state.errors?.logoUrl && <span className="mt-1 block text-sm font-bold text-red-600">{state.errors.logoUrl}</span>}
-          </label>
+          <ImageDropzone draftKind="contractor" draftId={contractorId} editToken={editToken} name="logoUrl" label="Company logo" />
+          {state.errors?.logoUrl && <span className="mt-1 block text-sm font-bold text-red-600">{state.errors.logoUrl}</span>}
         </MediaSection>
 
-        <MediaSection title="Project gallery" description="Add up to six links showing completed projects, teams, or equipment.">
-          {[1, 2, 3].map((item) => (
-            <label key={item}>
-              <span className="font-bold text-slate-800">Gallery image {item}</span>
-              <input
-                name="galleryUrls"
-                type="url"
-                defaultValue={item === 1 ? "https://images.unsplash.com/photo-1503387762-592deb58ef4e" : ""}
-                placeholder="https://..."
-                className={field}
-              />
-            </label>
-          ))}
+        <MediaSection title="Project gallery" description="Add up to six images showing completed projects, teams, or equipment.">
+          <ImageDropzone draftKind="contractor" draftId={contractorId} editToken={editToken} name="galleryUrls" label="Project gallery images" maxFiles={6} />
           {state.errors?.galleryUrls && <p className="text-sm font-bold text-red-600">{state.errors.galleryUrls}</p>}
         </MediaSection>
 
-        <MediaSection title="Supporting documents" description="Link trade licences, certifications, company profiles, or safety documents.">
-          {[1, 2].map((item) => (
-            <div key={item} className="grid gap-4 rounded-2xl border border-slate-200 p-4 sm:grid-cols-[1fr_180px]">
-              <label>
-                <span className="font-bold text-slate-800">Document name</span>
-                <input name="documentNames" defaultValue={item === 1 ? "Company Profile 2026" : ""} placeholder="e.g. ISO 9001 Certificate" className={field} />
-              </label>
-              <label>
-                <span className="font-bold text-slate-800">Type</span>
-                <select name="documentTypes" defaultValue={item === 1 ? "Company Profile" : "Certificate"} className={field}>
-                  <option>Company Profile</option>
-                  <option>Trade Licence</option>
-                  <option>Certificate</option>
-                  <option>Insurance</option>
-                  <option>Other</option>
-                </select>
-              </label>
-              <label className="sm:col-span-2">
-                <span className="font-bold text-slate-800">Document URL</span>
-                <input name="documentUrls" type="url" defaultValue={item === 1 ? "https://example.com/gulf-horizon-company-profile.pdf" : ""} placeholder="https://.../document.pdf" className={field} />
-              </label>
-            </div>
-          ))}
+        <MediaSection title="Supporting documents" description="Upload up to five trade licences, certifications, company profiles, or safety documents.">
+          <DocumentDropzone draftKind="contractor" draftId={contractorId} editToken={editToken} defaultType="Company Profile" documentTypes={["Company Profile", "Trade Licence", "Certificate", "Insurance", "Other"]} />
           {state.errors?.documents && <p className="text-sm font-bold text-red-600">{state.errors.documents}</p>}
         </MediaSection>
 

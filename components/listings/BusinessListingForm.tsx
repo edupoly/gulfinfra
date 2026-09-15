@@ -5,9 +5,10 @@ import { BusinessMediaForm } from "@/components/listings/BusinessMediaForm";
 import { Progress } from "@/components/listings/ProjectListingForm";
 import { useActionState, useState } from "react";
 
-export function BusinessListingForm({ countries, cities, onBack }: {
+export function BusinessListingForm({ countries, cities, businessCategories, onBack }: {
   countries: Array<{ code: string; name: string }>;
   cities: Array<{ slug: string; name: string; countryCode: string }>;
+  businessCategories: Array<{ slug: string; name: string }>;
   onBack: () => void;
 }) {
   const [country, setCountry] = useState("AE");
@@ -20,7 +21,7 @@ export function BusinessListingForm({ countries, cities, onBack }: {
       <Section title="Opportunity information" description="The main information investors and business owners will see.">
         <label className="sm:col-span-2"><b>Opportunity title *</b><input name="title" required defaultValue="Profitable Construction Equipment Rental Business for Sale" className={field} /></label>
         <label><b>Opportunity type *</b><select name="section" defaultValue="Businesses for Sale" className={field}><option>Businesses for Sale</option><option>Businesses Wanted</option><option>Investment Opportunities</option></select></label>
-        <label><b>Business category *</b><input name="category" required defaultValue="Equipment Rental" className={field} /></label>
+        <label><b>Business category *</b><select name="category" required defaultValue="Equipment Rental Businesses" className={field}>{businessCategories.map((item) => <option key={item.slug} value={item.name}>{item.name}</option>)}</select></label>
         <label className="sm:col-span-2"><b>Asking price / budget / investment *</b><input name="investment" required defaultValue="AED 3,500,000" className={field} /></label>
         <label className="sm:col-span-2"><b>Opportunity description *</b><textarea name="description" minLength={100} maxLength={2500} rows={8} required defaultValue="Established construction equipment rental company serving contractors across Dubai and the Northern Emirates. The sale includes a maintained fleet of excavators, loaders, generators, active rental contracts, trained operators, workshop tools, customer records, and an experienced operations team. Detailed financial information is available to qualified buyers after signing a confidentiality agreement." className={field} /></label>
       </Section>

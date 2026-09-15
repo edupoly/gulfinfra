@@ -126,6 +126,26 @@ model EquipmentType {
   @@map("equipment_types")
 }
 
+model MaterialTypeOption {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  name      String
+  groupName String   @map("group_name")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([groupName])
+  @@map("material_type_options")
+}
+
+model BusinessCategoryOption {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  name      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("business_category_options")
+}
+
 model Country {
   id        String   @id @default(uuid())
   code      String   @unique
