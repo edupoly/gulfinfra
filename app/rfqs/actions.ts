@@ -8,6 +8,7 @@ export type RfqActionState = {
   success: boolean;
   message: string;
   errors?: Record<string, string>;
+  rfq?: { id: string; reference: string; status: string };
 };
 
 const text = (data: FormData, name: string) =>
@@ -55,15 +56,14 @@ export async function saveRfq(
   if (!values.unit) errors.unit = "Select or enter a unit.";
   if (values.specifications.length < 20)
     errors.specifications = "Provide at least 20 characters of specification detail.";
-  if (!values.address) errors.address = "Enter the delivery address.";
   if (!values.deliveryDate) errors.deliveryDate = "Select a delivery date.";
   if (!values.expirationDate) errors.expirationDate = "Select an expiration date.";
   if (!values.phone) errors.phone = "Enter a corporate phone number.";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email))
     errors.email = "Enter a valid email address.";
 
-  const deliveryDate = new Date(`${values.deliveryDate}T12:00:00.000Z`);
-  const expirationDate = new Date(`${values.expirationDate}T12:00:00.000Z`);
+  const deliveryDate = new Date(values.deliveryDate);
+  const expirationDate = new Date(values.expirationDate);
   if (Number.isNaN(deliveryDate.getTime()))
     errors.deliveryDate = "Select a valid delivery date.";
   if (Number.isNaN(expirationDate.getTime()))
@@ -115,7 +115,7 @@ export async function saveRfq(
     urgency: "Medium Urgency",
     deliveryDate,
     expirationDate,
-    deliveryTerms: values.address,
+    deliveryTerms: "Not applicable",
     description: values.specifications,
     phone: values.phone,
     email: values.email,
@@ -127,6 +127,7 @@ export async function saveRfq(
   };
 
   try {
+    let saved: { id: string; reference: string; status: string };
     if (id) {
       const owned = await prisma.rfq.findFirst({
         where: { id, buyerId: currentUser.id },
@@ -136,9 +137,9 @@ export async function saveRfq(
       if (owned.status === "awarded" || owned.status === "cancelled") {
         return { success: false, message: "Awarded or cancelled RFQs cannot be edited." };
       }
-      await prisma.rfq.update({ where: { id }, data: dataToSave });
+      saved = await prisma.rfq.update({ where: { id }, data: dataToSave, select: { id: true, reference: true, status: true } });
     } else {
-      await prisma.$transaction(async (tx) => {
+      saved = await prisma.$transaction(async (tx) => {
         const authorization = await tx.emailOtp.findFirst({
           where: {
             userId: currentUser.id,
@@ -157,13 +158,20 @@ export async function saveRfq(
         });
         if (claimed.count !== 1) throw new Error("RFQ_OTP_REQUIRED");
 
-        const sequence = (await tx.rfq.count()) + 1;
-        await tx.rfq.create({
+        const year = new Date().getUTCFullYear();
+        const sequence = await tx.rfqSequence.upsert({
+          where: { year },
+          create: { year, value: 1 },
+          update: { value: { increment: 1 } },
+          select: { value: true },
+        });
+        return tx.rfq.create({
           data: {
             ...dataToSave,
-            reference: `RFQ-${String(sequence).padStart(4, "0")}`,
+            reference: `RFQ-${year}-${String(sequence.value).padStart(5, "0")}`,
             buyerId: currentUser.id,
           },
+          select: { id: true, reference: true, status: true },
         });
       });
     }
@@ -172,6 +180,7 @@ export async function saveRfq(
     return {
       success: true,
       message: id ? "RFQ updated successfully." : "RFQ created successfully.",
+      rfq: saved,
     };
   } catch (error) {
     if (error instanceof Error && error.message === "RFQ_OTP_REQUIRED") {

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { saveRfq, type RfqActionState } from "@/app/rfqs/actions";
 import { EmailAuthFlow } from "@/components/auth/EmailAuthFlow";
+import type { CityOption, CountryOption } from "@/services/location-service";
 
 export type RfqRecord = {
   id: string;
@@ -37,16 +38,16 @@ export type RfqRecord = {
   quotationCount: number;
 };
 
-const categories = ["Materials Sourcing", "Equipment Rentals", "Equipment Purchases"];
+const defaultCategories = ["Construction Materials", "Civil Works", "MEP", "Electrical", "Plumbing", "HVAC", "Finishing", "Other"];
 const statuses = ["published", "draft", "closed"];
 const newRfqDefaults = {
   projectName: "Dubai Creek Infrastructure Development",
   materialService: "Ready-Mix Concrete Grade C40",
-  category: "Materials Sourcing",
+  category: "Construction Materials",
   country: "United Arab Emirates",
   city: "Dubai",
-  deliveryDate: "2026-09-01",
-  expirationDate: "2026-08-15",
+  deliveryDate: "",
+  expirationDate: "",
   budget: "AED 850,000",
   quantity: "5,000",
   unit: "Cubic Meters",
@@ -71,13 +72,18 @@ export function RfqWorkspace({
   initialCreate,
   initialRfqId,
   initialEditRfqId,
+  locations,
+  categories: categoryOptions,
 }: {
   rfqs: RfqRecord[];
   signedInEmail: string | null;
   initialCreate: boolean;
   initialRfqId: string | null;
   initialEditRfqId: string | null;
+  locations: { countries: CountryOption[]; cities: CityOption[] };
+  categories: string[];
 }) {
+  const categories = categoryOptions.length ? categoryOptions : defaultCategories;
   const router = useRouter();
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [category, setCategory] = useState("All Categories");
@@ -92,20 +98,15 @@ export function RfqWorkspace({
     () => rfqs.find((rfq) => rfq.id === initialRfqId) ?? null,
   );
 
-  const countries = useMemo(
-    () => [...new Set(rfqs.map((rfq) => rfq.country))].sort(),
-    [rfqs],
-  );
+  const countries = locations.countries.map((item) => item.name);
   const cities = useMemo(
     () =>
-      [
-        ...new Set(
-          rfqs
-            .filter((rfq) => country === "All Countries" || rfq.country === country)
-            .map((rfq) => rfq.city),
-        ),
-      ].sort(),
-    [country, rfqs],
+      country === "All Countries"
+        ? locations.cities.map((item) => item.name)
+        : locations.cities
+            .filter((item) => locations.countries.find((row) => row.name === country)?.code === item.countryCode)
+            .map((item) => item.name),
+    [country, locations],
   );
 
   const counts = useMemo(
@@ -117,7 +118,7 @@ export function RfqWorkspace({
         categories.map((item) => [item, rfqs.filter((rfq) => rfq.category === item).length]),
       ),
     }),
-    [rfqs],
+    [categories, rfqs],
   );
 
   const filtered = useMemo(() => {
@@ -183,7 +184,7 @@ export function RfqWorkspace({
         </div>
       </section>
 
-      <main className="mx-auto w-full max-w-[1440px] px-4 py-8 sm:px-6 lg:px-8">
+      <main id="available-rfqs" className="mx-auto w-full max-w-[1440px] scroll-mt-28 px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-xl font-black text-[#0b1f3a]">Available RFQs</h2>
@@ -348,6 +349,8 @@ export function RfqWorkspace({
             setFormRfq(undefined);
             router.refresh();
           }}
+          locations={locations}
+          categories={categories}
         />
       )}
       {detailsRfq && (
@@ -376,7 +379,7 @@ function RfqCard({
       <div className="grid lg:grid-cols-[130px_minmax(0,1fr)_260px]">
         <div className="relative m-5 mb-0 grid min-h-28 place-items-center rounded-xl border border-slate-200 bg-slate-50 lg:mb-5">
           <span className={`absolute left-2 top-2 rounded px-2.5 py-1 text-[0.68rem] font-black uppercase ${statusStyle}`}>
-            {rfq.status}
+            {rfq.status === "published" ? "Open" : rfq.status}
           </span>
           <span className="mt-5 text-4xl" aria-hidden="true">
             {rfq.category === "Materials Sourcing" ? "📦" : "🏗️"}
@@ -417,10 +420,8 @@ function RfqCard({
               🗎 {rfq.quotationCount} {rfq.quotationCount === 1 ? "Bid" : "Bids"}
             </span>
           </div>
-          <p className="mt-4 text-[0.68rem] font-black uppercase tracking-wide text-slate-400">
-            Delivery terms
-          </p>
-          <p className="mt-1 line-clamp-2 text-sm font-bold text-[#0b1f3a]">{rfq.deliveryTerms}</p>
+          <p className="mt-4 text-[0.68rem] font-black uppercase tracking-wide text-slate-400">Required date</p>
+          <p className="mt-1 text-sm font-bold text-[#0b1f3a]">{rfq.deliveryDate ? formatDate(rfq.deliveryDate) : "Not specified"}</p>
           <div className="mt-5 grid grid-cols-2 gap-2">
             <button type="button" onClick={onDetails} className="rounded-xl border border-slate-300 px-3 py-2.5 text-sm font-black text-[#0b1f3a]">Details</button>
             <Link href={`/rfqs/${rfq.id}`} className="rounded-xl bg-[#0b1f3a] px-3 py-2.5 text-center text-sm font-black text-white">View / Quote →</Link>
@@ -436,11 +437,15 @@ function RfqFormModal({
   signedInEmail,
   onClose,
   onSaved,
+  locations,
+  categories,
 }: {
   rfq: RfqRecord | null;
   signedInEmail: string | null;
   onClose: () => void;
   onSaved: () => void;
+  locations: { countries: CountryOption[]; cities: CityOption[] };
+  categories: string[];
 }) {
   const [step, setStep] = useState(1);
   const [review, setReview] = useState<Record<string, string>>({});
@@ -450,6 +455,7 @@ function RfqFormModal({
   const [verifiedEmail, setVerifiedEmail] = useState<string | null>(
     rfq ? rfq.email : null,
   );
+  const [formCountry, setFormCountry] = useState(rfq?.country || newRfqDefaults.country);
   const formRef = useRef<HTMLFormElement>(null);
   const [state, action, pending] = useActionState(saveRfq, {
     success: false,
@@ -458,9 +464,23 @@ function RfqFormModal({
   const field =
     "mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100";
 
-  useEffect(() => {
-    if (state.success) onSaved();
-  }, [onSaved, state.success]);
+  if (state.success && state.rfq) {
+    return (
+      <ModalShell title="RFQ submitted" onClose={onSaved}>
+        <div className="px-6 py-12 text-center sm:px-10">
+          <div className="mx-auto grid size-16 place-items-center rounded-full bg-emerald-100 text-3xl text-emerald-700">✓</div>
+          <h2 className="mt-5 text-3xl font-black text-[#0b1f3a]">Your RFQ is ready for review</h2>
+          <p className="mt-3 text-slate-600">Reference number</p>
+          <p className="mt-1 text-xl font-black text-amber-700">{state.rfq.reference}</p>
+          <p className="mt-4 text-sm text-slate-500">We have linked this RFQ to your verified email. You can track it from My RFQs.</p>
+          <div className="mt-7 flex flex-wrap justify-center gap-3">
+            <Link href="/my-rfqs" className="rounded-xl bg-[#0b1f3a] px-6 py-3 font-black text-white">Go to My RFQs</Link>
+            <button type="button" onClick={onSaved} className="rounded-xl border border-slate-300 px-6 py-3 font-bold">Browse RFQs</button>
+          </div>
+        </div>
+      </ModalShell>
+    );
+  }
 
   return (
     <ModalShell title={rfq ? `Edit ${rfq.reference}` : "Create New RFQ"} onClose={onClose}>
@@ -500,18 +520,20 @@ function RfqFormModal({
                 <input name="materialService" required defaultValue={rfq?.materialService || rfq?.title || newRfqDefaults.materialService} placeholder="e.g. Premium grade bitumen MC-30" className={field} />
               </Field>
               <Field label="GCC Country Served" error={state.errors?.country}>
-                <select name="country" required defaultValue={rfq?.country || newRfqDefaults.country} className={field}>
-                  {["Saudi Arabia", "United Arab Emirates", "Qatar", "Kuwait", "Oman", "Bahrain"].map((item) => <option key={item}>{item}</option>)}
+                <select name="country" required value={formCountry} onChange={(event) => setFormCountry(event.target.value)} className={field}>
+                  {locations.countries.map((item) => <option key={item.code}>{item.name}</option>)}
                 </select>
               </Field>
               <Field label="City" error={state.errors?.city}>
-                <input name="city" required defaultValue={rfq?.city || newRfqDefaults.city} placeholder="e.g. Riyadh" className={field} />
+                <select name="city" required defaultValue={rfq?.city || newRfqDefaults.city} className={field}>
+                  {locations.cities.filter((item) => locations.countries.find((country) => country.name === formCountry)?.code === item.countryCode).map((item) => <option key={item.slug}>{item.name}</option>)}
+                </select>
               </Field>
-              <Field label="Delivery Date" error={state.errors?.deliveryDate}>
+              <Field label="Required Date" error={state.errors?.deliveryDate}>
                 <input name="deliveryDate" type="date" required defaultValue={rfq?.deliveryDate?.slice(0, 10) || newRfqDefaults.deliveryDate} className={field} />
               </Field>
-              <Field label="Closing Date" error={state.errors?.expirationDate}>
-                <input name="expirationDate" type="date" required defaultValue={rfq ? rfq.expirationDate.slice(0, 10) : newRfqDefaults.expirationDate} className={field} />
+              <Field label="Closing Date & Time" error={state.errors?.expirationDate}>
+                <input name="expirationDate" type="datetime-local" required defaultValue={rfq ? toDateTimeLocal(rfq.expirationDate) : newRfqDefaults.expirationDate} className={field} />
               </Field>
               <Field label="Estimated Budget" wide optional>
                 <input name="budget" defaultValue={rfq ? rfq.budget || "" : newRfqDefaults.budget} placeholder="e.g. SAR 750,000" className={field} />
@@ -527,7 +549,7 @@ function RfqFormModal({
           <div className={step === 2 ? "block" : "hidden"}>
             <div className="mb-7 text-center">
               <p className="text-sm font-black uppercase tracking-[0.18em] text-amber-600">Step 2 of 4</p>
-              <h2 className="mt-2 text-3xl font-black text-[#0b1f3a]">Requirements & Delivery</h2>
+              <h2 className="mt-2 text-3xl font-black text-[#0b1f3a]">Requirements</h2>
               <p className="mt-2 text-slate-500">Give vendors enough detail to prepare an accurate quotation.</p>
             </div>
             <div className="grid gap-5 sm:grid-cols-2">
@@ -540,9 +562,6 @@ function RfqFormModal({
               </Field>
               <Field label="Specifications" error={state.errors?.specifications} wide>
                 <textarea name="specifications" required minLength={20} rows={5} defaultValue={rfq?.specifications || rfq?.description || newRfqDefaults.specifications} placeholder="Technical grade, standards, dimensions, performance and compliance requirements…" className={field} />
-              </Field>
-              <Field label="Delivery Address" error={state.errors?.address} wide>
-                <input name="address" required defaultValue={rfq?.address || newRfqDefaults.address} placeholder="Complete site or warehouse address" className={field} />
               </Field>
               <Field label="Notes" wide optional>
                 <textarea name="notes" rows={3} defaultValue={rfq ? rfq.notes || "" : newRfqDefaults.notes} placeholder="Commercial conditions, inspection requirements or other instructions…" className={field} />
@@ -618,12 +637,12 @@ function RfqFormModal({
             <div className="grid gap-5">
               <ReviewSection title="Project & Procurement" items={[
                 ["Project", review.projectName], ["Category", review.category], ["Material / Service", review.materialService],
-                ["Location", [review.city, review.country].filter(Boolean).join(", ")], ["Delivery date", review.deliveryDate],
+                ["Location", [review.city, review.country].filter(Boolean).join(", ")], ["Required date", review.deliveryDate],
                 ["Closing date", review.expirationDate], ["Budget", review.budget || "Not specified"],
               ]} />
-              <ReviewSection title="Requirements & Delivery" items={[
+              <ReviewSection title="Requirements" items={[
                 ["Quantity", `${review.quantity || ""} ${review.unit || ""}`.trim()], ["Specifications", review.specifications],
-                ["Delivery address", review.address], ["Notes", review.notes || "None"], ["Contact", `${review.phone || ""} · ${review.email || ""}`],
+                ["Notes", review.notes || "None"], ["Contact", `${review.phone || ""} · ${review.email || ""}`],
               ]} />
               <ReviewSection title="Supporting Documents" items={[
                 ["BOQ", review.boqUrl || "Not attached"], ["Drawings", review.drawingsUrl || "Not attached"],
@@ -697,7 +716,7 @@ function RfqDetailsModal({
                   : "bg-amber-100 text-amber-700"
             }`}
           >
-            {rfq.status}
+            {rfq.status === "published" ? "Open" : rfq.status}
           </span>
         </div>
 
@@ -710,16 +729,15 @@ function RfqDetailsModal({
               ["Material / Service", rfq.materialService || rfq.title],
               ["Country", rfq.country],
               ["City", rfq.city],
-              ["Delivery date", rfq.deliveryDate ? formatDate(rfq.deliveryDate) : "Not specified"],
+              ["Required date", rfq.deliveryDate ? formatDate(rfq.deliveryDate) : "Not specified"],
               ["Closing date", formatDate(rfq.expirationDate)],
               ["Budget", rfq.budget || "Not specified"],
             ]}
           />
           <ReviewSection
-            title="Requirements & Delivery"
+            title="Requirements"
             items={[
               ["Quantity", `${rfq.quantity}${rfq.unit ? ` ${rfq.unit}` : ""}`],
-              ["Delivery address", rfq.address || rfq.deliveryTerms],
               ["Specifications", rfq.specifications || rfq.description],
               ["Notes", rfq.notes || "None"],
             ]}
@@ -847,4 +865,10 @@ function formatDate(value: string) {
     year: "numeric",
     timeZone: "UTC",
   }).format(new Date(value));
+}
+
+function toDateTimeLocal(value: string) {
+  const date = new Date(value);
+  const offset = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 }

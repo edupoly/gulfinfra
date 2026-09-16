@@ -11,23 +11,27 @@ type Item = { slug: string; name: string; usage: number; groupName?: string };
 
 export default async function AdminTaxonomyPage({ searchParams }: { searchParams: Promise<{ message?: string; error?: string }> }) {
   const notice = await searchParams;
-  const [contractors, projects, equipment, materials, businesses, materialUsage, businessUsage] = await Promise.all([
+  const [contractors, projects, equipment, materials, businesses, rfqCategories, materialUsage, businessUsage, rfqUsage] = await Promise.all([
     prisma.contractorType.findMany({ orderBy: { name: "asc" }, select: { slug: true, name: true, _count: { select: { contractorLinks: true } } } }),
     prisma.projectTenderType.findMany({ orderBy: { name: "asc" }, select: { slug: true, name: true, _count: { select: { projectTenderLinks: true } } } }),
     prisma.equipmentType.findMany({ orderBy: { name: "asc" }, select: { slug: true, name: true, _count: { select: { equipment: true } } } }),
     prisma.materialTypeOption.findMany({ orderBy: { name: "asc" }, select: { slug: true, name: true, groupName: true } }),
     prisma.businessCategoryOption.findMany({ orderBy: { name: "asc" }, select: { slug: true, name: true } }),
+    prisma.rfqCategoryOption.findMany({ orderBy: { name: "asc" }, select: { slug: true, name: true } }),
     prisma.material.groupBy({ by: ["materialTypeSlug"], _count: true }),
     prisma.businessOpportunity.groupBy({ by: ["businessCategory"], _count: true }),
+    prisma.rfq.groupBy({ by: ["category"], _count: true }),
   ]);
   const materialCounts = new Map(materialUsage.map((row) => [row.materialTypeSlug, row._count]));
   const businessCounts = new Map(businessUsage.map((row) => [row.businessCategory, row._count]));
-  const sections: Array<{ group: "contractor" | "project" | "equipment" | "material" | "business"; title: string; items: Item[] }> = [
+  const rfqCounts = new Map(rfqUsage.map((row) => [row.category, row._count]));
+  const sections: Array<{ group: "contractor" | "project" | "equipment" | "material" | "business" | "rfq"; title: string; items: Item[] }> = [
     { group: "contractor", title: "Contractor categories", items: contractors.map((x) => ({ slug: x.slug, name: x.name, usage: x._count.contractorLinks })) },
     { group: "project", title: "Project categories", items: projects.map((x) => ({ slug: x.slug, name: x.name, usage: x._count.projectTenderLinks })) },
     { group: "equipment", title: "Equipment categories", items: equipment.map((x) => ({ slug: x.slug, name: x.name, usage: x._count.equipment })) },
     { group: "material", title: "Material categories", items: materials.map((x) => ({ ...x, usage: materialCounts.get(x.slug) ?? 0 })) },
     { group: "business", title: "Business categories", items: businesses.map((x) => ({ ...x, usage: businessCounts.get(x.name) ?? 0 })) },
+    { group: "rfq", title: "RFQ categories", items: rfqCategories.map((x) => ({ ...x, usage: rfqCounts.get(x.name) ?? 0 })) },
   ];
 
   return <>

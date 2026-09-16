@@ -83,10 +83,10 @@ export function EmailAuthFlow({
   return (
     <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-5 sm:p-6">
       <h3 className="text-xl font-black text-[#0b1f3a]">
-        {requireOtp ? "Verify your email to publish" : "Sign in securely"}
+        {requireOtp ? (purpose === "rfq_create" ? "Verify your email to submit this RFQ" : "Verify your email to publish") : "Sign in securely"}
       </h3>
       <p className="mt-1 text-sm text-slate-600">
-        {requireOtp ? "We require a one-time code before every new listing is published." : "New accounts start with email verification, then create a password."}
+        {requireOtp ? (purpose === "rfq_create" ? "GulfBuildHub will send a one-time code to this address. New users create a password after verification." : "We require a one-time code before every new listing is published.") : "New accounts start with email verification, then create a password."}
       </p>
 
       {stage === "email" && !usePassword && (

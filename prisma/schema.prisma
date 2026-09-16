@@ -146,6 +146,22 @@ model BusinessCategoryOption {
   @@map("business_category_options")
 }
 
+model RfqCategoryOption {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  name      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("rfq_category_options")
+}
+
+model RfqSequence {
+  year  Int @id
+  value Int @default(0)
+
+  @@map("rfq_sequences")
+}
+
 model Country {
   id        String   @id @default(uuid())
   code      String   @unique
