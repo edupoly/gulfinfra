@@ -679,6 +679,9 @@ model Rfq {
   updatedAt                DateTime  @updatedAt @map("updated_at")
   buyerId                  String?   @map("buyer_id")
   awardedAt                DateTime? @map("awarded_at")
+  moderationNote           String?   @map("moderation_note")
+  moderatedAt              DateTime? @map("moderated_at")
+  moderatedByEmail         String?   @map("moderated_by_email")
 
   quotations VendorQuotation[]
   buyer      User?             @relation("RfqBuyer", fields: [buyerId], references: [id], onDelete: SetNull)

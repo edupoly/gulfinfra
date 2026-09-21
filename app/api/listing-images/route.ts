@@ -1,4 +1,4 @@
-import { getActivityRestriction } from "@/lib/auth";
+import { getActivityRestriction, getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
@@ -28,7 +28,8 @@ export async function POST(request: Request) {
   const editToken = String(data.get("editToken") ?? "");
   const files = data.getAll("files").filter((item): item is File => item instanceof File);
   const tokenHash = createHash("sha256").update(editToken).digest("hex");
-  if (!draftId || !editToken || !(await draftExists(draftKind, draftId, tokenHash))) return Response.json({ error: "This draft could not be verified. Start a new listing." }, { status: 403 });
+  const draftIsValid = Boolean(draftId && editToken && await draftExists(draftKind, draftId, tokenHash));
+  if (!draftIsValid && !(await getCurrentUser())) return Response.json({ error: "Sign in before uploading files." }, { status: 401 });
   if (!files.length || files.length > MAX_FILES) return Response.json({ error: `Choose between 1 and ${MAX_FILES} images.` }, { status: 400 });
   if (files.some((file) => file.size > MAX_FILE_SIZE)) return Response.json({ error: "Each image must be 8 MB or smaller." }, { status: 413 });
   if (files.some((file) => !allowedTypes.has(file.type))) return Response.json({ error: "Only JPG, PNG, WebP, and GIF images are supported." }, { status: 415 });

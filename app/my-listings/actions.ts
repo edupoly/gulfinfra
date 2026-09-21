@@ -30,7 +30,7 @@ const integer = (data: FormData, name: string) => {
   return raw ? Number.parseInt(raw, 10) : null;
 };
 const lines = (data: FormData, name: string) =>
-  [...new Set(value(data, name, 5000).split(/\r?\n|,/).map((item) => item.trim()).filter(Boolean))];
+  [...new Set(data.getAll(name).map(String).join("\n").slice(0, 5000).split(/\r?\n|,/).map((item) => item.trim()).filter(Boolean))];
 const json = (data: FormData, name: string) => {
   const raw = value(data, name, 10_000);
   if (!raw) return [];
@@ -63,6 +63,12 @@ export async function updateOwnedListing(data: FormData) {
   const title = value(data, "title", 180);
   const description = value(data, "description", 3000);
   if (title.length < 2 || description.length < 20) throw new Error("INVALID_LISTING_DATA");
+  const documentUrls = lines(data, "documentUrls").slice(0, 5);
+  const documentData = documentUrls.map((documentUrl, index) => ({
+    name: documentUrl.split("/").pop()?.replace(/^[0-9a-f-]{36}/i, "") || `Document ${index + 1}`,
+    documentType: "Other",
+    documentUrl,
+  }));
 
   if (type === "contractor") {
     const contractorTypes = lines(data, "contractorTypes");
@@ -103,6 +109,7 @@ export async function updateOwnedListing(data: FormData) {
         transaction.contractorCountryLink.deleteMany({ where: { contractorId: id } }),
         transaction.contractorCityLink.deleteMany({ where: { contractorId: id } }),
         transaction.contractorGalleryItem.deleteMany({ where: { contractorId: id } }),
+        transaction.contractorDocument.deleteMany({ where: { contractorId: id } }),
       ]);
       if (contractorTypes.length) await transaction.contractorTypeLink.createMany({ data: contractorTypes.map((contractorTypeSlug) => ({ contractorId: id, contractorTypeSlug })) });
       if (services.length) await transaction.contractorService.createMany({ data: services.map((serviceName) => ({ contractorId: id, serviceName })) });
@@ -111,6 +118,7 @@ export async function updateOwnedListing(data: FormData) {
       if (countryCodes.length) await transaction.contractorCountryLink.createMany({ data: countryCodes.map((countryCode) => ({ contractorId: id, countryCode })) });
       if (citySlugs.length) await transaction.contractorCityLink.createMany({ data: citySlugs.map((citySlug) => ({ contractorId: id, citySlug })) });
       if (galleryUrls.length) await transaction.contractorGalleryItem.createMany({ data: galleryUrls.map((imageUrl) => ({ contractorId: id, imageUrl })) });
+      if (documentData.length) await transaction.contractorDocument.createMany({ data: documentData.map((document) => ({ contractorId: id, ...document })) });
     });
     revalidatePath(`/contractors/${listing.slug}`);
   } else if (type === "project") {
@@ -143,11 +151,13 @@ export async function updateOwnedListing(data: FormData) {
         transaction.projectTenderCountryLink.deleteMany({ where: { projectTenderId: id } }),
         transaction.projectTenderCityLink.deleteMany({ where: { projectTenderId: id } }),
         transaction.projectTenderSector.deleteMany({ where: { projectTenderId: id } }),
+        transaction.projectTenderDocument.deleteMany({ where: { projectTenderId: id } }),
       ]);
       if (projectTypes.length) await transaction.projectTenderTypeLink.createMany({ data: projectTypes.map((projectTenderTypeSlug) => ({ projectTenderId: id, projectTenderTypeSlug })) });
       if (countryCodes.length) await transaction.projectTenderCountryLink.createMany({ data: countryCodes.map((countryCode) => ({ projectTenderId: id, countryCode })) });
       if (citySlugs.length) await transaction.projectTenderCityLink.createMany({ data: citySlugs.map((citySlug) => ({ projectTenderId: id, citySlug })) });
       if (sectors.length) await transaction.projectTenderSector.createMany({ data: sectors.map((sectorName) => ({ projectTenderId: id, sectorName })) });
+      if (documentData.length) await transaction.projectTenderDocument.createMany({ data: documentData.map((document) => ({ projectTenderId: id, ...document })) });
     });
     revalidatePath(`/projects-tenders/${listing.slug}`);
   } else if (type === "equipment") {
@@ -180,6 +190,10 @@ export async function updateOwnedListing(data: FormData) {
         posted: optional(data, "posted", 100),
       },
     });
+    await prisma.$transaction([
+      prisma.equipmentDocument.deleteMany({ where: { equipmentId: id } }),
+      ...(documentData.length ? [prisma.equipmentDocument.createMany({ data: documentData.map((document) => ({ equipmentId: id, ...document })) })] : []),
+    ]);
     revalidatePath(`/equipment-marketplace/${listing.slug}`);
   } else if (type === "material") {
     await prisma.material.update({
@@ -209,6 +223,10 @@ export async function updateOwnedListing(data: FormData) {
         posted: optional(data, "posted", 100),
       },
     });
+    await prisma.$transaction([
+      prisma.materialDocument.deleteMany({ where: { materialId: id } }),
+      ...(documentData.length ? [prisma.materialDocument.createMany({ data: documentData.map((document) => ({ materialId: id, ...document })) })] : []),
+    ]);
     revalidatePath(`/construction-materials/${listing.slug}`);
   } else {
     await prisma.businessOpportunity.update({
@@ -230,6 +248,10 @@ export async function updateOwnedListing(data: FormData) {
         postedDate: optional(data, "posted", 100),
       },
     });
+    await prisma.$transaction([
+      prisma.businessOpportunityDocument.deleteMany({ where: { businessOpportunityId: id } }),
+      ...(documentData.length ? [prisma.businessOpportunityDocument.createMany({ data: documentData.map((document) => ({ businessOpportunityId: id, ...document })) })] : []),
+    ]);
     revalidatePath(`/business-opportunities/${listing.slug}`);
   }
 

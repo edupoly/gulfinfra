@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { OwnedListingType } from "@/app/my-listings/actions";
 import { EditListingWizard } from "@/components/account/EditListingWizard";
+import { FileDropzone } from "@/components/uploads/FileDropzone";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -22,7 +23,7 @@ export default async function EditOwnedListingPage({ params }: { params: Promise
   if (type === "contractor") {
     const item = await prisma.contractor.findFirst({
       where: { id, ownerId: user.id },
-      include: { contractorTypes: true, countries: true, cities: true, services: true, areasServed: true, licenses: true, galleryItems: true },
+      include: { contractorTypes: true, countries: true, cities: true, services: true, areasServed: true, licenses: true, galleryItems: true, documents: true },
     });
     if (item) listing = {
       title: item.name, description: item.description || "", companyType: item.companyType,
@@ -37,11 +38,12 @@ export default async function EditOwnedListingPage({ params }: { params: Promise
       areasServed: item.areasServed.map((entry) => entry.areaName).join("\n"),
       licenses: item.licenses.map((entry) => entry.licenseName).join("\n"),
       galleryUrls: item.galleryItems.map((entry) => entry.imageUrl).join("\n"),
+      documentUrls: item.documents.map((entry) => entry.documentUrl).join("\n"),
     };
   } else if (type === "project") {
     const item = await prisma.projectTender.findFirst({
       where: { id, ownerId: user.id },
-      include: { projectTenderTypes: true, countries: true, cities: true, sectors: true },
+      include: { projectTenderTypes: true, countries: true, cities: true, sectors: true, documents: true },
     });
     if (item) listing = {
       title: item.title, description: item.description || "", summary: item.summary || "",
@@ -53,9 +55,10 @@ export default async function EditOwnedListingPage({ params }: { params: Promise
       countryCodes: item.countries.map((entry) => entry.countryCode).join("\n"),
       citySlugs: item.cities.map((entry) => entry.citySlug).join("\n"),
       sectors: item.sectors.map((entry) => entry.sectorName).join("\n"),
+      documentUrls: item.documents.map((entry) => entry.documentUrl).join("\n"),
     };
   } else if (type === "equipment") {
-    const item = await prisma.equipment.findFirst({ where: { id, ownerId: user.id } });
+    const item = await prisma.equipment.findFirst({ where: { id, ownerId: user.id }, include: { documents: true } });
     if (item) listing = {
       title: item.title, description: item.description, equipmentTypeSlug: item.equipmentTypeSlug,
       listingType: item.listingType, condition: item.condition, countryCode: item.countryCode,
@@ -65,9 +68,10 @@ export default async function EditOwnedListingPage({ params }: { params: Promise
       specifications: JSON.stringify(item.specifications, null, 2), sellerName: item.sellerName,
       sellerType: item.sellerType, phone: item.phone, whatsapp: item.whatsapp || "",
       email: item.email || "", images: item.images.join("\n"), posted: item.posted || "",
+      documentUrls: item.documents.map((entry) => entry.documentUrl).join("\n"),
     };
   } else if (type === "material") {
-    const item = await prisma.material.findFirst({ where: { id, ownerId: user.id } });
+    const item = await prisma.material.findFirst({ where: { id, ownerId: user.id }, include: { documents: true } });
     if (item) listing = {
       title: item.name, description: item.description, materialGroup: item.materialGroup,
       materialType: item.materialType, materialTypeSlug: item.materialTypeSlug,
@@ -77,15 +81,17 @@ export default async function EditOwnedListingPage({ params }: { params: Promise
       specifications: JSON.stringify(item.specifications, null, 2), phone: item.phone,
       whatsapp: item.whatsapp || "", email: item.email || "", image: item.image || "",
       galleryImages: item.galleryImages.join("\n"), posted: item.posted || "",
+      documentUrls: item.documents.map((entry) => entry.documentUrl).join("\n"),
     };
   } else {
-    const item = await prisma.businessOpportunity.findFirst({ where: { id, ownerId: user.id } });
+    const item = await prisma.businessOpportunity.findFirst({ where: { id, ownerId: user.id }, include: { documents: true } });
     if (item) listing = {
       title: item.title, description: item.description, section: item.section,
       businessCategory: item.businessCategory, price: item.investment,
       countryCode: item.countryCode, citySlug: item.citySlug, email: item.contact,
       phone: item.phone, whatsapp: item.whatsapp || "", image: item.image || "",
       galleryImages: item.galleryImages.join("\n"), posted: item.postedDate || "",
+      documentUrls: item.documents.map((entry) => entry.documentUrl).join("\n"),
     };
   }
   if (!listing) notFound();
@@ -207,11 +213,13 @@ function BusinessFields({ listing }: { listing: EditValues }) {
 }
 
 function MediaFields({ type, listing }: { type: OwnedListingType; listing: EditValues }) {
-  if (type === "contractor") return <><Input name="logoUrl" label="Logo URL" value={listing.logoUrl} type="url" wide /><Textarea name="galleryUrls" label="Gallery image URLs (one per line)" value={listing.galleryUrls} rows={6} wide /></>;
-  if (type === "project") return <Textarea name="imageUrls" label="Project image URLs (one per line)" value={listing.imageUrls} rows={7} wide />;
-  if (type === "equipment") return <><Textarea name="images" label="Equipment image URLs (one per line)" value={listing.images} rows={7} wide /><Textarea name="specifications" label="Specifications JSON" value={listing.specifications} rows={10} wide /></>;
-  if (type === "material") return <><Input name="image" label="Primary image URL" value={listing.image} type="url" wide /><Textarea name="galleryImages" label="Gallery image URLs (one per line)" value={listing.galleryImages} rows={6} wide /><Textarea name="compliance" label="Compliance standards (one per line)" value={listing.compliance} rows={5} /><Textarea name="specifications" label="Specifications JSON" value={listing.specifications} rows={10} /></>;
-  return <><Input name="image" label="Primary image URL" value={listing.image} type="url" wide /><Textarea name="galleryImages" label="Gallery image URLs (one per line)" value={listing.galleryImages} rows={7} wide /></>;
+  const urls = (value: string) => value.split("\n").filter(Boolean);
+  const documents = <FileDropzone kind="document" name="documentUrls" label="supporting documents" initialUrls={urls(listing.documentUrls)} maxFiles={5} />;
+  if (type === "contractor") return <><FileDropzone kind="image" name="logoUrl" label="company logo" initialUrls={urls(listing.logoUrl)} /><FileDropzone kind="image" name="galleryUrls" label="gallery images" initialUrls={urls(listing.galleryUrls)} maxFiles={6} />{documents}</>;
+  if (type === "project") return <><FileDropzone kind="image" name="imageUrls" label="project images" initialUrls={urls(listing.imageUrls)} maxFiles={6} />{documents}</>;
+  if (type === "equipment") return <><FileDropzone kind="image" name="images" label="equipment images" initialUrls={urls(listing.images)} maxFiles={8} />{documents}<Textarea name="specifications" label="Specifications JSON" value={listing.specifications} rows={10} wide /></>;
+  if (type === "material") return <><FileDropzone kind="image" name="image" label="primary material image" initialUrls={urls(listing.image)} /><FileDropzone kind="image" name="galleryImages" label="gallery images" initialUrls={urls(listing.galleryImages)} maxFiles={6} />{documents}<Textarea name="compliance" label="Compliance standards (one per line)" value={listing.compliance} rows={5} /><Textarea name="specifications" label="Specifications JSON" value={listing.specifications} rows={10} /></>;
+  return <><FileDropzone kind="image" name="image" label="primary business image" initialUrls={urls(listing.image)} /><FileDropzone kind="image" name="galleryImages" label="gallery images" initialUrls={urls(listing.galleryImages)} maxFiles={6} />{documents}</>;
 }
 
 function Input({ name, label, value, type = "text", required = false, wide = false }: { name: string; label: string; value?: string; type?: string; required?: boolean; wide?: boolean }) {

@@ -47,7 +47,7 @@ export async function submitProjectApplication(
   if (!values.contactPhone) errors.contactPhone = "Enter a contact phone.";
   if (!values.proposedRole) errors.proposedRole = "Describe your proposed role or service.";
   if (values.coverMessage.length < 30 || values.coverMessage.length > 3000) errors.coverMessage = "Use between 30 and 3,000 characters.";
-  if (values.supportingDocumentUrl) {
+  if (values.supportingDocumentUrl && !values.supportingDocumentUrl.startsWith("/api/listing-documents/")) {
     try {
       const url = new URL(values.supportingDocumentUrl);
       if (!["http:", "https:"].includes(url.protocol)) throw new Error();

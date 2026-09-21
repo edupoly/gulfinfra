@@ -283,7 +283,7 @@ export function AdminListingManager({ groups }: { groups: AdminListingGroup[] })
 }
 
 function ListingReviewModal({ record, onClose, onApproved }: { record: ListingRecord; onClose: () => void; onApproved: () => void }) {
-  const canModerate = !["draft", "archived"].includes(record.status);
+  const canModerate = record.type !== "rfq" && !["draft", "archived"].includes(record.status);
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 p-3 sm:p-6" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section role="dialog" aria-modal="true" aria-labelledby="listing-review-title" className="flex max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
@@ -297,6 +297,7 @@ function ListingReviewModal({ record, onClose, onApproved }: { record: ListingRe
             <button type="button" onClick={onClose} aria-label="Close listing review" className="grid size-10 shrink-0 place-items-center rounded-full bg-slate-100 text-xl font-black text-slate-600 hover:bg-slate-200">×</button>
           </div>
           <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+            {record.type === "rfq" && <Link href="/admin/rfqs" className="rounded-lg bg-[#0b1f3a] px-4 py-2 text-sm font-black text-white">Open RFQ approval queue →</Link>}
             {canModerate && record.status !== "published" && <ModerationButton type={record.type} id={record.id} decision="approve" onCompleted={onApproved} />}
             {canModerate && record.status !== "on_hold" && <ModerationButton type={record.type} id={record.id} decision="hold" onCompleted={onClose} />}
             {canModerate && record.status !== "rejected" && <ModerationButton type={record.type} id={record.id} decision="reject" onCompleted={onClose} />}

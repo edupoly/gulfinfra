@@ -7,6 +7,7 @@ import {
   sendQuotationMessage,
   type QuotationActionState,
 } from "@/app/rfqs/quotation-actions";
+import { FileDropzone } from "@/components/uploads/FileDropzone";
 
 const initial: QuotationActionState = { success: false, message: "" };
 const field = "mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100";
@@ -62,7 +63,7 @@ export function QuotationForm({
       <label className="text-sm font-bold text-slate-700 sm:col-span-2">Payment terms<input name="paymentTerms" required defaultValue={existing?.paymentTerms ?? ""} placeholder="e.g. 30% advance, balance on delivery" className={field} />{error("paymentTerms")}</label>
       <label className="text-sm font-bold text-slate-700 sm:col-span-2">Technical specification<textarea name="technicalSpecification" required minLength={20} rows={5} defaultValue={existing?.technicalSpecification ?? ""} className={field} />{error("technicalSpecification")}</label>
       <label className="text-sm font-bold text-slate-700 sm:col-span-2">Remarks<textarea name="vendorNotes" rows={3} defaultValue={existing?.vendorNotes ?? ""} className={field} /></label>
-      <label className="text-sm font-bold text-slate-700 sm:col-span-2">Quotation PDF URL<input name="pdfUrl" type="url" defaultValue={existing?.pdfUrl ?? ""} placeholder="https://…" className={field} /></label>
+      <FileDropzone kind="document" name="pdfUrl" label="quotation PDF" initialUrls={existing?.pdfUrl ? [existing.pdfUrl] : []} />
       {state.message && <p role="status" className={`rounded-xl p-3 text-sm font-bold sm:col-span-2 ${state.success ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>{state.message}</p>}
       <div className="flex flex-wrap gap-3 sm:col-span-2">
         <button name="intent" value="draft" disabled={pending} className="rounded-xl border border-slate-300 px-5 py-3 font-black text-slate-700">Save draft</button>
@@ -82,7 +83,7 @@ export function QuotationMessageForm({ quotationId }: { quotationId: string }) {
     <form action={action} className="mt-5 space-y-3">
       <input type="hidden" name="quotationId" value={quotationId} />
       <textarea name="body" rows={3} maxLength={3000} placeholder="Write a message…" className={field} />
-      <input name="attachmentUrl" type="url" placeholder="Optional file URL" className={field} />
+      <FileDropzone kind="document" name="attachmentUrl" label="message attachment" />
       {state.message && <p className={`text-sm font-bold ${state.success ? "text-emerald-700" : "text-red-700"}`}>{state.message}</p>}
       <button disabled={pending} className="rounded-xl bg-[#0b1f3a] px-5 py-3 font-black text-white">{pending ? "Sending…" : "Send message"}</button>
     </form>

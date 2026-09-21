@@ -10,6 +10,7 @@ import {
   updateProfile,
   type AccountActionState,
 } from "@/app/account/actions";
+import { FileDropzone } from "@/components/uploads/FileDropzone";
 
 const initialState: AccountActionState = { success: false, message: "" };
 const field =
@@ -56,11 +57,7 @@ export function ProfileForm({ profile }: { profile: ProfileValues }) {
         Job title
         <input name="jobTitle" defaultValue={profile.jobTitle ?? ""} maxLength={100} autoComplete="organization-title" className={field} />
       </label>
-      <label className="block text-sm font-bold text-slate-700 sm:col-span-2">
-        Profile photo URL
-        <input name="profileImageUrl" type="url" defaultValue={profile.profileImageUrl ?? ""} maxLength={500} placeholder="https://example.com/profile.jpg" className={field} />
-        <span className="mt-1 block text-xs font-normal text-slate-500">Use a publicly accessible HTTPS image URL.</span>
-      </label>
+      <FileDropzone kind="image" name="profileImageUrl" label="profile photo" initialUrls={profile.profileImageUrl ? [profile.profileImageUrl] : []} />
       {state.message && (
         <p role="status" className={`rounded-lg p-3 text-sm font-bold sm:col-span-2 ${state.success ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
           {state.message}

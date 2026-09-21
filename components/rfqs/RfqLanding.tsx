@@ -50,7 +50,7 @@ export function RfqLanding({
               <p className="text-xs font-black uppercase tracking-[0.14em] text-amber-700">I&apos;m a Buyer</p>
               <h2 className="mt-1 text-xl font-black text-[#0b1f3a]">Request competitive pricing</h2>
               <p className="mt-1 text-sm font-medium leading-6 text-slate-600">Post requirements, compare offers and award a supplier.</p>
-              <div className="mt-4 flex flex-wrap gap-2"><Link href="/rfqs?view=buyers&create=1" className="rounded-lg bg-amber-400 px-4 py-2.5 text-sm font-black text-[#0b1f3a] hover:bg-amber-300">＋ Add Buyer Quotation</Link><Link href="/rfqs?view=buyers" className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-[#0b1f3a] hover:border-amber-400">See All</Link></div>
+              <div className="mt-4"><Link href="/rfqs?view=buyers&create=1" className="inline-block rounded-lg bg-amber-400 px-4 py-2.5 text-sm font-black text-[#0b1f3a] hover:bg-amber-300">＋ Add Buyer Quotation</Link></div>
             </div>
           </article>
 
@@ -60,7 +60,7 @@ export function RfqLanding({
               <p className="text-xs font-black uppercase tracking-[0.14em] text-blue-700">I&apos;m a Supplier</p>
               <h2 className="mt-1 text-xl font-black text-[#0b1f3a]">Find requirements and quote</h2>
               <p className="mt-1 text-sm font-medium leading-6 text-slate-600">Find open RFQs and submit a private supplier quotation.</p>
-              <div className="mt-4 flex flex-wrap gap-2"><Link href="/rfqs?view=buyers#available-rfqs" className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-black text-white hover:bg-blue-500">＋ Add Supplier Quotation</Link><Link href={signedIn ? "/my-quotations" : "/login"} className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-[#0b1f3a] hover:border-blue-400">See All</Link></div>
+              <div className="mt-4"><Link href="/rfqs?view=buyers#available-rfqs" className="inline-block rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-black text-white hover:bg-blue-500">See All Buyer Quotations</Link></div>
             </div>
           </article>
         </div>

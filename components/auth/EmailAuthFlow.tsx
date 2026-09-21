@@ -20,12 +20,14 @@ export function EmailAuthFlow({
   requireOtp = false,
   purpose = "login",
   lockEmail = false,
+  redirectTo,
 }: {
   defaultEmail?: string;
   onAuthenticated?: (email: string) => void;
   requireOtp?: boolean;
   purpose?: "login" | "rfq_create";
   lockEmail?: boolean;
+  redirectTo?: string | null;
 }) {
   const router = useRouter();
   const [email, setEmail] = useState(defaultEmail);
@@ -54,8 +56,8 @@ export function EmailAuthFlow({
     if (stage !== "complete" || completed.current) return;
     completed.current = true;
     if (onAuthenticated) onAuthenticated(activeEmail);
-    else router.push(loginState.redirectTo || verifyState.redirectTo || "/my-listings");
-  }, [activeEmail, loginState.redirectTo, onAuthenticated, router, stage, verifyState.redirectTo]);
+    else router.push(redirectTo || loginState.redirectTo || verifyState.redirectTo || "/my-listings");
+  }, [activeEmail, loginState.redirectTo, onAuthenticated, redirectTo, router, stage, verifyState.redirectTo]);
 
   useEffect(() => {
     if (!requireOtp || checkedSession.current) return;

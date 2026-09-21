@@ -34,7 +34,7 @@ export async function updateProfile(
   if (user.blockedAt) return { success: false, message: BLOCKED_ACTIVITY_MESSAGE };
 
   const profileImageUrl = optionalText(data, "profileImageUrl", 500);
-  if (profileImageUrl) {
+  if (profileImageUrl && !profileImageUrl.startsWith("/api/listing-images/")) {
     try {
       const parsed = new URL(profileImageUrl);
       if (!["http:", "https:"].includes(parsed.protocol)) throw new Error();

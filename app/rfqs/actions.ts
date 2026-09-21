@@ -38,7 +38,7 @@ export async function saveRfq(
     boqUrl: text(data, "boqUrl"),
     drawingsUrl: text(data, "drawingsUrl"),
     specificationDocumentUrl: text(data, "specificationDocumentUrl"),
-    otherDocumentUrls: text(data, "otherDocumentUrls")
+    otherDocumentUrls: data.getAll("otherDocumentUrls").map(String).join("\n")
       .split(/\r?\n|,/)
       .map((item) => item.trim())
       .filter(Boolean),
@@ -137,7 +137,14 @@ export async function saveRfq(
       if (owned.status === "awarded" || owned.status === "cancelled") {
         return { success: false, message: "Awarded or cancelled RFQs cannot be edited." };
       }
-      saved = await prisma.rfq.update({ where: { id }, data: dataToSave, select: { id: true, reference: true, status: true } });
+      saved = await prisma.rfq.update({
+        where: { id },
+        data: {
+          ...dataToSave,
+          ...(values.status === "pending" ? { moderationNote: null, moderatedAt: null, moderatedByEmail: null } : {}),
+        },
+        select: { id: true, reference: true, status: true },
+      });
     } else {
       saved = await prisma.$transaction(async (tx) => {
         const authorization = await tx.emailOtp.findFirst({

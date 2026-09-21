@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { submitProjectApplication, type ProjectApplicationState } from "@/app/project-applications/actions";
+import { FileDropzone } from "@/components/uploads/FileDropzone";
 
 const initial: ProjectApplicationState = { success: false, message: "" };
 const field = "mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100";
@@ -41,7 +42,8 @@ export function ProjectApplicationForm({
       <label className="text-sm font-bold text-slate-700">Phone<input name="contactPhone" type="tel" required defaultValue={defaults?.contactPhone ?? ""} className={field} />{error("contactPhone")}</label>
       <label className="text-sm font-bold text-slate-700 sm:col-span-2">Proposed role or service<input name="proposedRole" required defaultValue={defaults?.proposedRole ?? ""} placeholder="e.g. MEP subcontractor, steel supplier, project consultant" className={field} />{error("proposedRole")}</label>
       <label className="text-sm font-bold text-slate-700 sm:col-span-2">Cover message<textarea name="coverMessage" required minLength={30} maxLength={3000} rows={7} defaultValue={defaults?.coverMessage ?? ""} placeholder="Introduce your company, relevant experience, capacity, and interest in this opportunity." className={field} />{error("coverMessage")}</label>
-      <label className="text-sm font-bold text-slate-700 sm:col-span-2">Supporting document URL <span className="font-normal text-slate-500">(optional)</span><input name="supportingDocumentUrl" type="url" defaultValue={defaults?.supportingDocumentUrl ?? ""} placeholder="https://…/company-profile.pdf" className={field} />{error("supportingDocumentUrl")}<span className="mt-1 block text-xs font-normal text-slate-500">Direct uploads will replace this field when storage credentials are available.</span></label>
+      <FileDropzone kind="document" name="supportingDocumentUrl" label="supporting document" initialUrls={defaults?.supportingDocumentUrl ? [defaults.supportingDocumentUrl] : []} />
+      {error("supportingDocumentUrl")}
       {state.message && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700 sm:col-span-2">{state.message}</p>}
       <button disabled={pending} className="rounded-xl bg-amber-400 px-6 py-3 font-black text-slate-950 disabled:opacity-60 sm:col-span-2 sm:w-fit">{pending ? "Submitting…" : defaults ? "Update application" : "Submit application"}</button>
     </form>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { saveRfq, type RfqActionState } from "@/app/rfqs/actions";
 import { EmailAuthFlow } from "@/components/auth/EmailAuthFlow";
+import { FileDropzone } from "@/components/uploads/FileDropzone";
 import type { CityOption, CountryOption } from "@/services/location-service";
 
 export type RfqRecord = {
@@ -57,7 +58,7 @@ const newRfqDefaults = {
   notes:
     "Pricing should include transport, pumping coordination, quality testing, and staged delivery. Suppliers must confirm daily production capacity.",
   phone: "+971 50 555 0147",
-  email: "procurement@creekinfrastructure.example",
+  email: "",
   boqUrl: "https://example.com/documents/ready-mix-concrete-boq.pdf",
   drawingsUrl: "https://example.com/documents/site-layout-drawings.pdf",
   specificationDocumentUrl:
@@ -456,13 +457,78 @@ function RfqFormModal({
     rfq ? rfq.email : null,
   );
   const [formCountry, setFormCountry] = useState(rfq?.country || newRfqDefaults.country);
+  const [stepValidity, setStepValidity] = useState<Record<number, boolean>>(() => ({
+    1: Boolean(
+      rfq?.projectName && rfq.category && (rfq.materialService || rfq.title) && rfq.country && rfq.city &&
+      rfq.deliveryDate && rfq.expirationDate && new Date(rfq.deliveryDate) > new Date(rfq.expirationDate),
+    ),
+    2: Boolean(
+      (rfq?.quantity || newRfqDefaults.quantity) && (rfq?.unit || newRfqDefaults.unit) &&
+      (rfq?.specifications || rfq?.description || newRfqDefaults.specifications).length >= 20 &&
+      (rfq?.phone || newRfqDefaults.phone) && (rfq?.email || signedInEmail),
+    ),
+    3: true,
+  }));
   const formRef = useRef<HTMLFormElement>(null);
-  const [state, action, pending] = useActionState(saveRfq, {
+  const [state, action, pending] = useActionState(async (previousState: RfqActionState, data: FormData) => {
+    const result = await saveRfq(previousState, data);
+    if (result.errors && Object.keys(result.errors).length > 0) {
+      const stepOneFields = ["projectName", "materialService", "category", "country", "city", "deliveryDate", "expirationDate"];
+      setStep(Object.keys(result.errors).some((name) => stepOneFields.includes(name)) ? 1 : 2);
+    }
+    return result;
+  }, {
     success: false,
     message: "",
   } satisfies RfqActionState);
   const field =
     "mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100";
+
+  function validateStep(stepToValidate: number, showErrors = false) {
+    const form = formRef.current;
+    if (!form) return false;
+
+    const stepContainer = form.querySelector<HTMLElement>(`[data-rfq-step="${stepToValidate}"]`);
+    if (!stepContainer) return true;
+
+    const controls = Array.from(
+      stepContainer.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
+        "input, select, textarea",
+      ),
+    );
+
+    if (stepToValidate === 1) {
+      const delivery = form.elements.namedItem("deliveryDate") as HTMLInputElement | null;
+      const expiration = form.elements.namedItem("expirationDate") as HTMLInputElement | null;
+      delivery?.setCustomValidity("");
+      if (delivery?.value && expiration?.value && new Date(delivery.value) <= new Date(expiration.value)) {
+        delivery.setCustomValidity("Delivery must be scheduled after the RFQ closing date.");
+      }
+    }
+
+    const valid = controls.every((control) => control.checkValidity());
+
+    if (showErrors && !valid) {
+      controls.find((control) => !control.checkValidity())?.reportValidity();
+    }
+    return valid;
+  }
+
+  function refreshStepValidity() {
+    setStepValidity({
+      1: validateStep(1),
+      2: validateStep(2),
+      3: validateStep(3),
+    });
+  }
+
+  function continueFromStep(currentStep: number, nextStep: number) {
+    if (!validateStep(currentStep, true)) {
+      refreshStepValidity();
+      return;
+    }
+    setStep(nextStep);
+  }
 
   if (state.success && state.rfq) {
     return (
@@ -499,9 +565,9 @@ function RfqFormModal({
           ))}
         </ol>
 
-        <form id="rfq-form" ref={formRef} action={action}>
+        <form id="rfq-form" ref={formRef} action={action} onInput={refreshStepValidity} onChange={refreshStepValidity}>
           {rfq && <input type="hidden" name="id" value={rfq.id} />}
-          <div className={step === 1 ? "block" : "hidden"}>
+          <div data-rfq-step="1" className={step === 1 ? "block" : "hidden"}>
             <div className="mb-7 text-center">
               <p className="text-sm font-black uppercase tracking-[0.18em] text-amber-600">Step 1 of 4</p>
               <h2 className="mt-2 text-3xl font-black text-[#0b1f3a]">Project & Procurement</h2>
@@ -540,13 +606,13 @@ function RfqFormModal({
               </Field>
             </div>
             <div className="mt-8 flex justify-end border-t border-slate-200 pt-6">
-              <button type="button" onClick={() => setStep(2)} className="rounded-xl bg-[#0b1f3a] px-7 py-3 font-black text-white">
+              <button type="button" disabled={!stepValidity[1]} onClick={() => continueFromStep(1, 2)} className="rounded-xl bg-[#0b1f3a] px-7 py-3 font-black text-white disabled:cursor-not-allowed disabled:opacity-50">
                 Continue →
               </button>
             </div>
           </div>
 
-          <div className={step === 2 ? "block" : "hidden"}>
+          <div data-rfq-step="2" className={step === 2 ? "block" : "hidden"}>
             <div className="mb-7 text-center">
               <p className="text-sm font-black uppercase tracking-[0.18em] text-amber-600">Step 2 of 4</p>
               <h2 className="mt-2 text-3xl font-black text-[#0b1f3a]">Requirements</h2>
@@ -576,51 +642,44 @@ function RfqFormModal({
                   required
                   value={contactEmail}
                   onChange={(event) => setContactEmail(event.target.value)}
-                  readOnly={!rfq && Boolean(signedInEmail)}
                   placeholder="procurement@company.com"
-                  className={`${field} ${!rfq && signedInEmail ? "bg-slate-100 text-slate-600" : ""}`}
+                  className={field}
                 />
-                {!rfq && signedInEmail && <p className="mt-1 text-xs text-slate-500">Using your signed-in account email.</p>}
+                {!rfq && signedInEmail && <p className="mt-1 text-xs text-slate-500">You can use your signed-in email or enter another email for verification.</p>}
               </Field>
             </div>
             <div className="mt-8 flex flex-col-reverse justify-between gap-3 border-t border-slate-200 pt-6 sm:flex-row">
               <button type="button" onClick={() => setStep(1)} className="rounded-xl border border-slate-300 px-6 py-3 font-bold">← Back</button>
-              <button type="button" onClick={() => setStep(3)} className="rounded-xl bg-[#0b1f3a] px-7 py-3 font-black text-white">Continue →</button>
+              <button type="button" disabled={!stepValidity[2]} onClick={() => continueFromStep(2, 3)} className="rounded-xl bg-[#0b1f3a] px-7 py-3 font-black text-white disabled:cursor-not-allowed disabled:opacity-50">Continue →</button>
             </div>
           </div>
 
-          <div className={step === 3 ? "block" : "hidden"}>
+          <div data-rfq-step="3" className={step === 3 ? "block" : "hidden"}>
             <div className="mb-7 text-center">
               <p className="text-sm font-black uppercase tracking-[0.18em] text-amber-600">Step 3 of 4</p>
               <h2 className="mt-2 text-3xl font-black text-[#0b1f3a]">Supporting Documents</h2>
               <p className="mt-2 text-slate-500">Add secure links to the files vendors should review.</p>
             </div>
             <div className="grid gap-5">
-              <Field label="BOQ" optional>
-                <input name="boqUrl" type="url" defaultValue={rfq ? rfq.boqUrl || "" : newRfqDefaults.boqUrl} placeholder="https://…/bill-of-quantities.pdf" className={field} />
-              </Field>
-              <Field label="Drawings" optional>
-                <input name="drawingsUrl" type="url" defaultValue={rfq ? rfq.drawingsUrl || "" : newRfqDefaults.drawingsUrl} placeholder="https://…/drawings.pdf" className={field} />
-              </Field>
-              <Field label="Specification Document" optional>
-                <input name="specificationDocumentUrl" type="url" defaultValue={rfq ? rfq.specificationDocumentUrl || "" : newRfqDefaults.specificationDocumentUrl} placeholder="https://…/technical-specifications.pdf" className={field} />
-              </Field>
-              <Field label="Other Documents" optional>
-                <textarea name="otherDocumentUrls" rows={4} defaultValue={rfq ? rfq.otherDocumentUrls.join("\n") : newRfqDefaults.otherDocumentUrls} placeholder={"Add one document URL per line\nhttps://…/terms.pdf"} className={field} />
-              </Field>
+              <FileDropzone kind="document" name="boqUrl" label="BOQ" initialUrls={rfq?.boqUrl ? [rfq.boqUrl] : []} />
+              <FileDropzone kind="document" name="drawingsUrl" label="drawings" initialUrls={rfq?.drawingsUrl ? [rfq.drawingsUrl] : []} />
+              <FileDropzone kind="document" name="specificationDocumentUrl" label="specification document" initialUrls={rfq?.specificationDocumentUrl ? [rfq.specificationDocumentUrl] : []} />
+              <FileDropzone kind="document" name="otherDocumentUrls" label="other documents" initialUrls={rfq?.otherDocumentUrls ?? []} maxFiles={5} />
             </div>
             <div className="mt-8 flex flex-col-reverse justify-between gap-3 border-t border-slate-200 pt-6 sm:flex-row">
               <button type="button" onClick={() => setStep(2)} className="rounded-xl border border-slate-300 px-6 py-3 font-bold">← Back</button>
               <button
                 type="button"
+                disabled={!stepValidity[3]}
                 onClick={() => {
+                  if (!validateStep(3, true)) return;
                   if (formRef.current) {
                     const entries = Array.from(new FormData(formRef.current).entries()).map(([key, value]) => [key, String(value)]);
                     setReview(Object.fromEntries(entries));
                   }
                   setStep(4);
                 }}
-                className="rounded-xl bg-[#0b1f3a] px-7 py-3 font-black text-white"
+                className="rounded-xl bg-[#0b1f3a] px-7 py-3 font-black text-white disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Review RFQ →
               </button>

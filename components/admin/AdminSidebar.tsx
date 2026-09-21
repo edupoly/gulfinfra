@@ -11,6 +11,7 @@ const links = [
   { href: "/admin/taxonomy", label: "Marketplace taxonomy" },
   { href: "/admin/users", label: "User management" },
   { href: "/admin/listings", label: "All listings" },
+  { href: "/admin/rfqs", label: "RFQ approvals" },
   { href: "/admin/project-applications", label: "Project applications" },
   { href: "/admin/contact-submissions", label: "Contact submissions" },
   { href: "/admin/security", label: "Change password" },

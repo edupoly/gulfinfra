@@ -61,3 +61,39 @@ export async function sendPasswordResetEmail(email: string, resetUrl: string) {
     html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto"><h1 style="color:#0b1f3a">Reset your password</h1><p>Use the secure link below to choose a new password.</p><p><a href="${resetUrl}" style="display:inline-block;border-radius:10px;background:#fbbf24;color:#0b1f3a;padding:12px 20px;font-weight:800;text-decoration:none">Reset password</a></p><p>This link expires in 30 minutes and can only be used once.</p><p>If you did not request a password reset, you can safely ignore this email.</p></div>`,
   });
 }
+
+export async function sendRfqModerationEmail({
+  email,
+  reference,
+  title,
+  decision,
+  note,
+}: {
+  email: string;
+  reference: string;
+  title: string;
+  decision: "approved" | "changes_requested" | "rejected";
+  note?: string;
+}) {
+  const { gmailUser, transporter } = gmailTransport();
+  const from = process.env.AUTH_EMAIL_FROM || gmailUser;
+  const labels = {
+    approved: "approved and opened to suppliers",
+    changes_requested: "returned for changes",
+    rejected: "rejected",
+  } as const;
+  const label = labels[decision];
+  const dashboardUrl = `${process.env.NEXT_PUBLIC_SITE_URL || "https://gulfinfra.vercel.app"}/my-rfqs`;
+  await transporter.sendMail({
+    from,
+    to: email,
+    subject: `${reference} has been ${label} | GulfBuildHub`,
+    text: `${reference} — ${title} has been ${label}.${note ? ` Admin note: ${note}` : ""} Manage your RFQ: ${dashboardUrl}`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto"><h1 style="color:#0b1f3a">RFQ review update</h1><p><strong>${reference}</strong> — ${title}</p><p>Your RFQ has been <strong>${label}</strong>.</p>${note ? `<div style="border-left:4px solid #fbbf24;background:#fffbeb;padding:12px 16px"><strong>Admin note</strong><br>${escapeHtml(note)}</div>` : ""}<p><a href="${dashboardUrl}" style="display:inline-block;border-radius:10px;background:#fbbf24;color:#0b1f3a;padding:12px 20px;font-weight:800;text-decoration:none">View My RFQs</a></p></div>`,
+  });
+}
+
+function escapeHtml(value: string) {
+  const entities: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" };
+  return value.replace(/[&<>'"]/g, (character) => entities[character]);
+}
