@@ -1,0 +1,17 @@
+[Unit]
+Description=GulfBuildHub Next.js production server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/gulfbuildhub/htdocs/gulfbuildhub.com
+Environment=NODE_ENV=production
+Environment=PORT=3001
+Environment=PATH=/home/gulfbuildhub/.nvm/versions/node/v22.23.2/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/gulfbuildhub/.nvm/versions/node/v22.23.2/bin/npm start
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
