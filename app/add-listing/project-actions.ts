@@ -67,7 +67,7 @@ function slugify(value: string) {
 }
 
 function isUrl(value: string) {
-  if (value.startsWith("/api/listing-documents/") || value.startsWith("/api/listing-images/")) return true;
+  if (value.startsWith("/api/private-files")) return true;
   try {
     return ["http:", "https:"].includes(new URL(value).protocol);
   } catch {

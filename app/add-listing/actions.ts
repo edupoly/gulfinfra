@@ -66,7 +66,7 @@ const hashToken = (token: string) =>
   createHash("sha256").update(token).digest("hex");
 
 function isWebUrl(value: string) {
-  if (value.startsWith("/api/listing-documents/") || value.startsWith("/api/listing-images/")) return true;
+  if (value.startsWith("/api/private-files")) return true;
   try {
     const url = new URL(value);
     return ["http:", "https:"].includes(url.protocol);

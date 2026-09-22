@@ -2,6 +2,7 @@
 
 import { useId, useRef, useState } from "react";
 import Image from "next/image";
+import { upload as uploadBlob, uploadPresigned as uploadPresignedBlob } from "@vercel/blob/client";
 
 type UploadedFile = { name: string; url: string };
 
@@ -35,13 +36,18 @@ export function FileDropzone({
     if (!selected.length) return setError(`You can add up to ${maxFiles} ${maxFiles === 1 ? "file" : "files"}.`);
     setUploading(true);
     setError("");
-    const body = new FormData();
-    selected.forEach((file) => body.append("files", file));
     try {
-      const response = await fetch(isImage ? "/api/listing-images" : "/api/listing-documents", { method: "POST", body });
-      const result = (await response.json()) as { files?: UploadedFile[]; error?: string };
-      if (!response.ok || !result.files) throw new Error(result.error || "Upload failed.");
-      setFiles((current) => [...current, ...result.files!].slice(0, maxFiles));
+      const uploaded = await Promise.all(selected.map(async (file) => {
+        const pathname = `${isImage ? "images" : "documents"}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`;
+        const blob = isImage
+          ? await uploadBlob(pathname, file, { access: "public", handleUploadUrl: "/api/blob-upload" })
+          : await uploadPresignedBlob(pathname, file, { access: "private", handleUploadUrl: "/api/blob-upload" });
+        return {
+          name: file.name,
+          url: isImage ? blob.url : `/api/private-files?url=${encodeURIComponent(blob.url)}&name=${encodeURIComponent(file.name)}`,
+        };
+      }));
+      setFiles((current) => [...current, ...uploaded].slice(0, maxFiles));
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : "Upload failed. Please try again.");
     } finally {

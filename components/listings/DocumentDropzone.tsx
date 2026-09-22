@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
+import { uploadPresigned } from "@vercel/blob/client";
 
 type UploadedDocument = { name: string; url: string };
 
@@ -35,17 +36,16 @@ export function DocumentDropzone({
 
     setUploading(true);
     setError("");
-    const body = new FormData();
-    body.set("draftKind", draftKind);
-    body.set("draftId", draftId);
-    body.set("editToken", editToken);
-    selected.forEach((file) => body.append("files", file));
-
     try {
-      const response = await fetch("/api/listing-documents", { method: "POST", body });
-      const result = (await response.json()) as { files?: UploadedDocument[]; error?: string };
-      if (!response.ok || !result.files) throw new Error(result.error || "Upload failed.");
-      setDocuments((current) => [...current, ...result.files!].slice(0, maxFiles));
+      const uploaded = await Promise.all(selected.map(async (file) => {
+        const blob = await uploadPresigned(`documents/${draftKind}/${draftId}/${file.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`, file, {
+          access: "private",
+          handleUploadUrl: "/api/blob-upload",
+          clientPayload: JSON.stringify({ draftKind, draftId, editToken }),
+        });
+        return { name: file.name, url: `/api/private-files?url=${encodeURIComponent(blob.url)}&name=${encodeURIComponent(file.name)}` };
+      }));
+      setDocuments((current) => [...current, ...uploaded].slice(0, maxFiles));
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : "Upload failed. Please try again.");
     } finally {

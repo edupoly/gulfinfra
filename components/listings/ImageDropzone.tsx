@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
+import { upload as uploadBlob } from "@vercel/blob/client";
 
 type UploadedImage = { name: string; url: string };
 
@@ -34,16 +35,16 @@ export function ImageDropzone({
     if (!selected.length) return setError(`You can add up to ${maxFiles} ${maxFiles === 1 ? "image" : "images"}.`);
     setUploading(true);
     setError("");
-    const body = new FormData();
-    body.set("draftKind", draftKind);
-    body.set("draftId", draftId);
-    body.set("editToken", editToken);
-    selected.forEach((file) => body.append("files", file));
     try {
-      const response = await fetch("/api/listing-images", { method: "POST", body });
-      const result = (await response.json()) as { files?: UploadedImage[]; error?: string };
-      if (!response.ok || !result.files) throw new Error(result.error || "Upload failed.");
-      setImages((current) => [...current, ...result.files!].slice(0, maxFiles));
+      const uploaded = await Promise.all(selected.map(async (file) => {
+        const blob = await uploadBlob(`images/${draftKind}/${draftId}/${file.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`, file, {
+          access: "public",
+          handleUploadUrl: "/api/blob-upload",
+          clientPayload: JSON.stringify({ draftKind, draftId, editToken }),
+        });
+        return { name: file.name, url: blob.url };
+      }));
+      setImages((current) => [...current, ...uploaded].slice(0, maxFiles));
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : "Upload failed. Please try again.");
     } finally {

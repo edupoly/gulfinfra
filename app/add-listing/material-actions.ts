@@ -20,7 +20,7 @@ export type MaterialPublishState = { success: boolean; message: string; slug?: s
 const text = (data: FormData, name: string) => String(data.get(name) ?? "").trim();
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
 const split = (value: string) => [...new Set(value.split(",").map((item) => item.trim()).filter(Boolean))];
-const isUrl = (value: string) => value.startsWith("/api/listing-documents/") || value.startsWith("/api/listing-images/") || (() => { try { return ["http:", "https:"].includes(new URL(value).protocol); } catch { return false; } })();
+const isUrl = (value: string) => value.startsWith("/api/private-files") || (() => { try { return ["http:", "https:"].includes(new URL(value).protocol); } catch { return false; } })();
 const parseSpecs = (value: string) => value.split("\n").map((line) => line.trim()).filter(Boolean).map((line) => { const [label, ...rest] = line.split(":"); return { label: label.trim(), value: rest.join(":").trim() }; }).filter((item) => item.label && item.value);
 const slugify = (value: string) => `${value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 70) || "material"}-${crypto.randomUUID().slice(0, 8)}`;
 

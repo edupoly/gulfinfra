@@ -17,7 +17,7 @@ export type BusinessPublishState = { success: boolean; message: string; slug?: s
 
 const text = (data: FormData, name: string) => String(data.get(name) ?? "").trim();
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
-const isUrl = (value: string) => value.startsWith("/api/listing-documents/") || value.startsWith("/api/listing-images/") || (() => { try { return ["http:", "https:"].includes(new URL(value).protocol); } catch { return false; } })();
+const isUrl = (value: string) => value.startsWith("/api/private-files") || (() => { try { return ["http:", "https:"].includes(new URL(value).protocol); } catch { return false; } })();
 const slugify = (value: string) => `${value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 70) || "opportunity"}-${crypto.randomUUID().slice(0, 8)}`;
 
 export async function saveBusinessDraft(_state: BusinessDraftState, data: FormData): Promise<BusinessDraftState> {
