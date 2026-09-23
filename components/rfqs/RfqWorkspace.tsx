@@ -730,6 +730,21 @@ function RfqFormModal({
                 />
               </div>
             )}
+            {(uploadingDocuments || pending) && (
+              <div role="status" aria-live="polite" className="mt-6 rounded-xl border border-blue-200 bg-blue-50 p-4">
+                <div className="flex items-center justify-between gap-4 text-sm font-bold text-blue-900">
+                  <span>{uploadingDocuments ? "Uploading documents…" : "Submitting RFQ…"}</span>
+                  <span>Please wait</span>
+                </div>
+                <div
+                  role="progressbar"
+                  aria-label={uploadingDocuments ? "Uploading documents" : "Submitting RFQ"}
+                  className="mt-3 h-2 overflow-hidden rounded-full bg-blue-200"
+                >
+                  <div className="h-full w-full animate-pulse rounded-full bg-blue-600" />
+                </div>
+              </div>
+            )}
             <div className="mt-8 flex flex-col-reverse justify-between gap-3 border-t border-slate-200 pt-6 sm:flex-row">
               <button type="button" onClick={() => setStep(3)} className="rounded-xl border border-slate-300 px-6 py-3 font-bold">← Back</button>
               {(rfq || verifiedEmail) && (

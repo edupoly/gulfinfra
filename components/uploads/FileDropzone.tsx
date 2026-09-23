@@ -114,9 +114,8 @@ export const FileDropzone = forwardRef<FileDropzoneHandle, {
         </button>
       </div>
       {pendingFiles.map((file, index) => (
-        <div key={`${file.name}-${file.size}-${file.lastModified}`} className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
+        <div key={`${file.name}-${file.size}-${file.lastModified}`} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3">
           <span className="min-w-0 flex-1 truncate text-sm font-bold text-slate-700">{file.name}</span>
-          <span className="text-xs font-bold text-amber-700">Uploads after verification</span>
           <button type="button" onClick={() => setPendingFiles((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="font-bold text-red-700">Remove</button>
         </div>
       ))}
