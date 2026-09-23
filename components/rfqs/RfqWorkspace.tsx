@@ -457,18 +457,7 @@ function RfqFormModal({
     rfq ? rfq.email : null,
   );
   const [formCountry, setFormCountry] = useState(rfq?.country || newRfqDefaults.country);
-  const [stepValidity, setStepValidity] = useState<Record<number, boolean>>(() => ({
-    1: Boolean(
-      rfq?.projectName && rfq.category && (rfq.materialService || rfq.title) && rfq.country && rfq.city &&
-      rfq.deliveryDate && rfq.expirationDate && new Date(rfq.deliveryDate) > new Date(rfq.expirationDate),
-    ),
-    2: Boolean(
-      (rfq?.quantity || newRfqDefaults.quantity) && (rfq?.unit || newRfqDefaults.unit) &&
-      (rfq?.specifications || rfq?.description || newRfqDefaults.specifications).length >= 20 &&
-      (rfq?.phone || newRfqDefaults.phone) && (rfq?.email || signedInEmail),
-    ),
-    3: true,
-  }));
+  const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
   const formRef = useRef<HTMLFormElement>(null);
   const [state, action, pending] = useActionState(async (previousState: RfqActionState, data: FormData) => {
     const result = await saveRfq(previousState, data);
@@ -484,7 +473,7 @@ function RfqFormModal({
   const field =
     "mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100";
 
-  function validateStep(stepToValidate: number, showErrors = false) {
+  function validateStep(stepToValidate: number) {
     const form = formRef.current;
     if (!form) return false;
 
@@ -506,28 +495,29 @@ function RfqFormModal({
       }
     }
 
-    const valid = controls.every((control) => control.checkValidity());
-
-    if (showErrors && !valid) {
-      controls.find((control) => !control.checkValidity())?.reportValidity();
+    const errors: Record<string, string> = {};
+    for (const control of controls) {
+      if (control.name && !control.checkValidity()) {
+        errors[control.name] = control.validationMessage;
+      }
     }
-    return valid;
-  }
-
-  function refreshStepValidity() {
-    setStepValidity({
-      1: validateStep(1),
-      2: validateStep(2),
-      3: validateStep(3),
-    });
+    setClientErrors((current) => ({ ...current, ...errors }));
+    return Object.keys(errors).length === 0;
   }
 
   function continueFromStep(currentStep: number, nextStep: number) {
-    if (!validateStep(currentStep, true)) {
-      refreshStepValidity();
-      return;
-    }
+    if (!validateStep(currentStep)) return;
     setStep(nextStep);
+  }
+
+  function clearClientError(event: React.FormEvent<HTMLFormElement>) {
+    const control = event.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+    if (!control.name || !clientErrors[control.name]) return;
+    setClientErrors((current) => {
+      const next = { ...current };
+      delete next[control.name];
+      return next;
+    });
   }
 
   if (state.success && state.rfq) {
@@ -565,7 +555,7 @@ function RfqFormModal({
           ))}
         </ol>
 
-        <form id="rfq-form" ref={formRef} action={action} onInput={refreshStepValidity} onChange={refreshStepValidity}>
+        <form id="rfq-form" ref={formRef} action={action} noValidate onInput={clearClientError}>
           {rfq && <input type="hidden" name="id" value={rfq.id} />}
           <div data-rfq-step="1" className={step === 1 ? "block" : "hidden"}>
             <div className="mb-7 text-center">
@@ -574,31 +564,31 @@ function RfqFormModal({
               <p className="mt-2 text-slate-500">Define what is needed and the key procurement dates.</p>
             </div>
             <div className="grid gap-5 sm:grid-cols-2">
-              <Field label="Project Name" error={state.errors?.projectName}>
+              <Field label="Project Name" error={clientErrors.projectName || state.errors?.projectName}>
                 <input name="projectName" required defaultValue={rfq?.projectName || newRfqDefaults.projectName} placeholder="Associated project" className={field} />
               </Field>
-              <Field label="RFQ Category" error={state.errors?.category}>
+              <Field label="RFQ Category" error={clientErrors.category || state.errors?.category}>
                 <select name="category" required defaultValue={rfq?.category || newRfqDefaults.category} className={field}>
                   {categories.map((item) => <option key={item}>{item}</option>)}
                 </select>
               </Field>
-              <Field label="Material / Service" error={state.errors?.materialService} wide>
+              <Field label="Material / Service" error={clientErrors.materialService || state.errors?.materialService} wide>
                 <input name="materialService" required defaultValue={rfq?.materialService || rfq?.title || newRfqDefaults.materialService} placeholder="e.g. Premium grade bitumen MC-30" className={field} />
               </Field>
-              <Field label="GCC Country Served" error={state.errors?.country}>
+              <Field label="GCC Country Served" error={clientErrors.country || state.errors?.country}>
                 <select name="country" required value={formCountry} onChange={(event) => setFormCountry(event.target.value)} className={field}>
                   {locations.countries.map((item) => <option key={item.code}>{item.name}</option>)}
                 </select>
               </Field>
-              <Field label="City" error={state.errors?.city}>
+              <Field label="City" error={clientErrors.city || state.errors?.city}>
                 <select name="city" required defaultValue={rfq?.city || newRfqDefaults.city} className={field}>
                   {locations.cities.filter((item) => locations.countries.find((country) => country.name === formCountry)?.code === item.countryCode).map((item) => <option key={item.slug}>{item.name}</option>)}
                 </select>
               </Field>
-              <Field label="Required Date" error={state.errors?.deliveryDate}>
+              <Field label="Required Date" error={clientErrors.deliveryDate || state.errors?.deliveryDate}>
                 <input name="deliveryDate" type="date" required defaultValue={rfq?.deliveryDate?.slice(0, 10) || newRfqDefaults.deliveryDate} className={field} />
               </Field>
-              <Field label="Closing Date & Time" error={state.errors?.expirationDate}>
+              <Field label="Closing Date & Time" error={clientErrors.expirationDate || state.errors?.expirationDate}>
                 <input name="expirationDate" type="datetime-local" required defaultValue={rfq ? toDateTimeLocal(rfq.expirationDate) : newRfqDefaults.expirationDate} className={field} />
               </Field>
               <Field label="Estimated Budget" wide optional>
@@ -606,7 +596,7 @@ function RfqFormModal({
               </Field>
             </div>
             <div className="mt-8 flex justify-end border-t border-slate-200 pt-6">
-              <button type="button" disabled={!stepValidity[1]} onClick={() => continueFromStep(1, 2)} className="rounded-xl bg-[#0b1f3a] px-7 py-3 font-black text-white disabled:cursor-not-allowed disabled:opacity-50">
+              <button type="button" onClick={() => continueFromStep(1, 2)} className="rounded-xl bg-[#0b1f3a] px-7 py-3 font-black text-white">
                 Continue →
               </button>
             </div>
@@ -619,23 +609,23 @@ function RfqFormModal({
               <p className="mt-2 text-slate-500">Give vendors enough detail to prepare an accurate quotation.</p>
             </div>
             <div className="grid gap-5 sm:grid-cols-2">
-              <Field label="Quantity" error={state.errors?.quantity}>
+              <Field label="Quantity" error={clientErrors.quantity || state.errors?.quantity}>
                 <input name="quantity" required defaultValue={rfq?.quantity || newRfqDefaults.quantity} placeholder="e.g. 5,000" className={field} />
               </Field>
-              <Field label="Unit" error={state.errors?.unit}>
+              <Field label="Unit" error={clientErrors.unit || state.errors?.unit}>
                 <input name="unit" required defaultValue={rfq?.unit || newRfqDefaults.unit} list="rfq-units" placeholder="e.g. Tons, Units, Liters" className={field} />
                 <datalist id="rfq-units"><option value="Units" /><option value="Tons" /><option value="Kilograms" /><option value="Liters" /><option value="Meters" /><option value="Square Meters" /><option value="Cubic Meters" /><option value="Months" /></datalist>
               </Field>
-              <Field label="Specifications" error={state.errors?.specifications} wide>
+              <Field label="Specifications" error={clientErrors.specifications || state.errors?.specifications} wide>
                 <textarea name="specifications" required minLength={20} rows={5} defaultValue={rfq?.specifications || rfq?.description || newRfqDefaults.specifications} placeholder="Technical grade, standards, dimensions, performance and compliance requirements…" className={field} />
               </Field>
               <Field label="Notes" wide optional>
                 <textarea name="notes" rows={3} defaultValue={rfq ? rfq.notes || "" : newRfqDefaults.notes} placeholder="Commercial conditions, inspection requirements or other instructions…" className={field} />
               </Field>
-              <Field label="Corporate Phone" error={state.errors?.phone}>
+              <Field label="Corporate Phone" error={clientErrors.phone || state.errors?.phone}>
                 <input name="phone" type="tel" required defaultValue={rfq?.phone || newRfqDefaults.phone} placeholder="+966 50 XXX XXXX" className={field} />
               </Field>
-              <Field label="Procurement Email" error={state.errors?.email}>
+              <Field label="Procurement Email" error={clientErrors.email || state.errors?.email}>
                 <input
                   name="email"
                   type="email"
@@ -650,7 +640,7 @@ function RfqFormModal({
             </div>
             <div className="mt-8 flex flex-col-reverse justify-between gap-3 border-t border-slate-200 pt-6 sm:flex-row">
               <button type="button" onClick={() => setStep(1)} className="rounded-xl border border-slate-300 px-6 py-3 font-bold">← Back</button>
-              <button type="button" disabled={!stepValidity[2]} onClick={() => continueFromStep(2, 3)} className="rounded-xl bg-[#0b1f3a] px-7 py-3 font-black text-white disabled:cursor-not-allowed disabled:opacity-50">Continue →</button>
+              <button type="button" onClick={() => continueFromStep(2, 3)} className="rounded-xl bg-[#0b1f3a] px-7 py-3 font-black text-white">Continue →</button>
             </div>
           </div>
 
@@ -670,16 +660,15 @@ function RfqFormModal({
               <button type="button" onClick={() => setStep(2)} className="rounded-xl border border-slate-300 px-6 py-3 font-bold">← Back</button>
               <button
                 type="button"
-                disabled={!stepValidity[3]}
                 onClick={() => {
-                  if (!validateStep(3, true)) return;
+                  if (!validateStep(3)) return;
                   if (formRef.current) {
                     const entries = Array.from(new FormData(formRef.current).entries()).map(([key, value]) => [key, String(value)]);
                     setReview(Object.fromEntries(entries));
                   }
                   setStep(4);
                 }}
-                className="rounded-xl bg-[#0b1f3a] px-7 py-3 font-black text-white disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-xl bg-[#0b1f3a] px-7 py-3 font-black text-white"
               >
                 Review RFQ →
               </button>
@@ -887,7 +876,7 @@ function Field({
   return (
     <label className={wide ? "sm:col-span-2" : undefined}>
       <b className="text-sm text-[#0b1f3a]">
-        {label} {!optional && "*"}
+        {label}{!optional && <span className="text-red-600"> *(mandatory)</span>}
       </b>
       {children}
       {error && <span className="mt-1 block text-xs font-bold text-red-600">{error}</span>}
