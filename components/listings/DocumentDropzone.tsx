@@ -37,6 +37,18 @@ export function DocumentDropzone({
     setUploading(true);
     setError("");
     try {
+      if (process.env.NEXT_PUBLIC_STORAGE_DRIVER === "local") {
+        const body = new FormData();
+        body.set("draftKind", draftKind);
+        body.set("draftId", draftId);
+        body.set("editToken", editToken);
+        selected.forEach((file) => body.append("files", file));
+        const response = await fetch("/api/listing-documents", { method: "POST", body });
+        const result = (await response.json()) as { files?: UploadedDocument[]; error?: string };
+        if (!response.ok || !result.files) throw new Error(result.error || "Upload failed.");
+        setDocuments((current) => [...current, ...result.files!].slice(0, maxFiles));
+        return;
+      }
       const uploaded = await Promise.all(selected.map(async (file) => {
         const blob = await uploadPresigned(`documents/${draftKind}/${draftId}/${file.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`, file, {
           access: "private",
