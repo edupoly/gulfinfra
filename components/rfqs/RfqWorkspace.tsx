@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { saveRfq, type RfqActionState } from "@/app/rfqs/actions";
 import { EmailAuthFlow } from "@/components/auth/EmailAuthFlow";
-import { FileDropzone } from "@/components/uploads/FileDropzone";
+import { FileDropzone, type FileDropzoneHandle } from "@/components/uploads/FileDropzone";
 import type { CityOption, CountryOption } from "@/services/location-service";
 
 export type RfqRecord = {
@@ -459,6 +459,8 @@ function RfqFormModal({
   const [formCountry, setFormCountry] = useState(rfq?.country || newRfqDefaults.country);
   const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
   const formRef = useRef<HTMLFormElement>(null);
+  const documentUploadRefs = useRef<Array<FileDropzoneHandle | null>>([]);
+  const [uploadingDocuments, setUploadingDocuments] = useState(false);
   const [state, action, pending] = useActionState(async (previousState: RfqActionState, data: FormData) => {
     const result = await saveRfq(previousState, data);
     if (result.errors && Object.keys(result.errors).length > 0) {
@@ -520,6 +522,23 @@ function RfqFormModal({
     });
   }
 
+  async function uploadDocumentsBeforeSubmit(event: React.FormEvent<HTMLFormElement>) {
+    const pendingDropzones = documentUploadRefs.current.filter(
+      (dropzone): dropzone is FileDropzoneHandle => Boolean(dropzone?.hasPendingFiles()),
+    );
+    if (!pendingDropzones.length) return;
+
+    event.preventDefault();
+    const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+    setUploadingDocuments(true);
+    const results = await Promise.all(pendingDropzones.map((dropzone) => dropzone.uploadPendingFiles()));
+    setUploadingDocuments(false);
+    if (results.some((uploaded) => !uploaded)) return;
+
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    formRef.current?.requestSubmit(submitter ?? undefined);
+  }
+
   if (state.success && state.rfq) {
     return (
       <ModalShell title="RFQ submitted" onClose={onSaved}>
@@ -555,7 +574,7 @@ function RfqFormModal({
           ))}
         </ol>
 
-        <form id="rfq-form" ref={formRef} action={action} noValidate onInput={clearClientError}>
+        <form id="rfq-form" ref={formRef} action={action} noValidate onInput={clearClientError} onSubmit={uploadDocumentsBeforeSubmit}>
           {rfq && <input type="hidden" name="id" value={rfq.id} />}
           <div data-rfq-step="1" className={step === 1 ? "block" : "hidden"}>
             <div className="mb-7 text-center">
@@ -651,10 +670,10 @@ function RfqFormModal({
               <p className="mt-2 text-slate-500">Add secure links to the files vendors should review.</p>
             </div>
             <div className="grid gap-5">
-              <FileDropzone kind="document" name="boqUrl" label="BOQ" initialUrls={rfq?.boqUrl ? [rfq.boqUrl] : []} />
-              <FileDropzone kind="document" name="drawingsUrl" label="drawings" initialUrls={rfq?.drawingsUrl ? [rfq.drawingsUrl] : []} />
-              <FileDropzone kind="document" name="specificationDocumentUrl" label="specification document" initialUrls={rfq?.specificationDocumentUrl ? [rfq.specificationDocumentUrl] : []} />
-              <FileDropzone kind="document" name="otherDocumentUrls" label="other documents" initialUrls={rfq?.otherDocumentUrls ?? []} maxFiles={5} />
+              <FileDropzone ref={(handle) => { documentUploadRefs.current[0] = handle; }} deferUpload={!rfq} kind="document" name="boqUrl" label="BOQ" initialUrls={rfq?.boqUrl ? [rfq.boqUrl] : []} />
+              <FileDropzone ref={(handle) => { documentUploadRefs.current[1] = handle; }} deferUpload={!rfq} kind="document" name="drawingsUrl" label="drawings" initialUrls={rfq?.drawingsUrl ? [rfq.drawingsUrl] : []} />
+              <FileDropzone ref={(handle) => { documentUploadRefs.current[2] = handle; }} deferUpload={!rfq} kind="document" name="specificationDocumentUrl" label="specification document" initialUrls={rfq?.specificationDocumentUrl ? [rfq.specificationDocumentUrl] : []} />
+              <FileDropzone ref={(handle) => { documentUploadRefs.current[3] = handle; }} deferUpload={!rfq} kind="document" name="otherDocumentUrls" label="other documents" initialUrls={rfq?.otherDocumentUrls ?? []} maxFiles={5} />
             </div>
             <div className="mt-8 flex flex-col-reverse justify-between gap-3 border-t border-slate-200 pt-6 sm:flex-row">
               <button type="button" onClick={() => setStep(2)} className="rounded-xl border border-slate-300 px-6 py-3 font-bold">← Back</button>
@@ -715,9 +734,9 @@ function RfqFormModal({
               <button type="button" onClick={() => setStep(3)} className="rounded-xl border border-slate-300 px-6 py-3 font-bold">← Back</button>
               {(rfq || verifiedEmail) && (
                 <div className="flex gap-3">
-                  <button form="rfq-form" name="intent" value="draft" disabled={pending} className="rounded-xl border border-slate-300 px-6 py-3 font-bold text-slate-700">Save Draft</button>
-                  <button form="rfq-form" name="intent" value="published" disabled={pending} className="rounded-xl bg-amber-400 px-6 py-3 font-black text-slate-950">
-                    {pending ? "Saving…" : rfq ? "Update & Submit for Approval" : "Submit RFQ for Approval"}
+                  <button form="rfq-form" name="intent" value="draft" disabled={pending || uploadingDocuments} className="rounded-xl border border-slate-300 px-6 py-3 font-bold text-slate-700">Save Draft</button>
+                  <button form="rfq-form" name="intent" value="published" disabled={pending || uploadingDocuments} className="rounded-xl bg-amber-400 px-6 py-3 font-black text-slate-950">
+                    {uploadingDocuments ? "Uploading documents…" : pending ? "Saving…" : rfq ? "Update & Submit for Approval" : "Submit RFQ for Approval"}
                   </button>
                 </div>
               )}

@@ -18,6 +18,10 @@ export async function saveRfq(
   _state: RfqActionState,
   data: FormData,
 ): Promise<RfqActionState> {
+  if (data.getAll("listingUploadPending").some(Boolean)) {
+    return { success: false, message: "Wait for all documents to finish uploading before submitting." };
+  }
+
   const id = text(data, "id");
   const values = {
     projectName: text(data, "projectName"),
