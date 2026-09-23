@@ -109,8 +109,14 @@ export const FileDropzone = forwardRef<FileDropzoneHandle, {
         <input ref={inputRef} id={inputId} type="file" multiple={maxFiles > 1} accept={isImage ? "image/jpeg,image/png,image/webp,image/gif" : ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.dwg"} className="sr-only" onChange={(event) => event.target.files && void selectFiles(event.target.files)} />
         <p className="font-black text-[#0b1f3a]">Drag and drop {label.toLowerCase()} here</p>
         <p className="mt-1 text-sm text-slate-500">{isImage ? "JPG, PNG, WebP or GIF · 8 MB maximum" : "PDF, Office, text, CSV or DWG · 10 MB maximum"}</p>
-        <button type="button" disabled={uploading || fileCount >= maxFiles} onClick={() => inputRef.current?.click()} className="mt-4 rounded-full bg-[#0b1f3a] px-5 py-2.5 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50">
-          {uploading ? "Uploading…" : fileCount >= maxFiles ? "File limit reached" : `Choose ${maxFiles === 1 ? "file" : "files"}`}
+        <button
+          type="button"
+          disabled={uploading || fileCount >= maxFiles}
+          aria-label={fileCount >= maxFiles ? "File selected" : undefined}
+          onClick={() => inputRef.current?.click()}
+          className={`mt-4 rounded-full px-5 py-2.5 font-bold text-white disabled:cursor-not-allowed ${fileCount >= maxFiles ? "bg-emerald-600" : "bg-[#0b1f3a] disabled:opacity-50"}`}
+        >
+          {uploading ? "Uploading…" : fileCount >= maxFiles ? "✓" : `Choose ${maxFiles === 1 ? "file" : "files"}`}
         </button>
       </div>
       {pendingFiles.map((file, index) => (
