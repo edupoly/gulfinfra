@@ -876,7 +876,9 @@ function Field({
   return (
     <label className={wide ? "sm:col-span-2" : undefined}>
       <b className="text-sm text-[#0b1f3a]">
-        {label}{!optional && <span className="text-red-600"> *(mandatory)</span>}
+        {label}{!optional && (
+          <span className={error ? "text-red-600" : "text-slate-500"}> *(mandatory)</span>
+        )}
       </b>
       {children}
       {error && <span className="mt-1 block text-xs font-bold text-red-600">{error}</span>}
