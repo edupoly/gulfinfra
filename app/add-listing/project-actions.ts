@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { createHash, randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { BLOCKED_ACTIVITY_MESSAGE, getActivityRestriction, getCurrentUser } from "@/lib/auth";
+import { isHttpOrUploadedFileUrl } from "@/lib/upload-url";
 
 export type ProjectDraftState = {
   success: boolean;
@@ -64,15 +65,6 @@ function slugify(value: string) {
       .replace(/^-|-$/g, "")
       .slice(0, 70) || "project";
   return `${base}-${crypto.randomUUID().slice(0, 8)}`;
-}
-
-function isUrl(value: string) {
-  if (value.startsWith("/api/private-files")) return true;
-  try {
-    return ["http:", "https:"].includes(new URL(value).protocol);
-  } catch {
-    return false;
-  }
 }
 
 export async function saveProjectDraft(
@@ -247,10 +239,10 @@ export async function saveProjectMedia(
     documentUrl: documentUrl.trim(),
   })).filter((item) => item.name || item.documentUrl);
   const errors: Record<string, string> = {};
-  if (imageUrls.length > 6 || imageUrls.some((url) => !isUrl(url)))
-    errors.images = "Add up to six valid image URLs.";
-  if (documents.length > 5 || documents.some((item) => !item.name || !isUrl(item.documentUrl)))
-    errors.documents = "Each document needs a name and valid URL.";
+  if (imageUrls.length > 6 || imageUrls.some((url) => !isHttpOrUploadedFileUrl(url)))
+    errors.images = "Upload up to six valid images.";
+  if (documents.length > 5 || documents.some((item) => !item.name || !isHttpOrUploadedFileUrl(item.documentUrl)))
+    errors.documents = "Each uploaded document needs a name.";
   if (Object.keys(errors).length)
     return { success: false, message: "Please correct the media details.", errors };
 

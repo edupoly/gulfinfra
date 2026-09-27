@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { BLOCKED_ACTIVITY_MESSAGE, getCurrentUser, normalizeEmail } from "@/lib/auth";
+import { isHttpOrUploadedFileUrl } from "@/lib/upload-url";
 
 export type RfqActionState = {
   success: boolean;
@@ -65,6 +66,15 @@ export async function saveRfq(
   if (!values.phone) errors.phone = "Enter a corporate phone number.";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email))
     errors.email = "Enter a valid email address.";
+  const documentUrls = [
+    values.boqUrl,
+    values.drawingsUrl,
+    values.specificationDocumentUrl,
+    ...values.otherDocumentUrls,
+  ].filter(Boolean);
+  if (documentUrls.some((url) => !isHttpOrUploadedFileUrl(url))) {
+    errors.documents = "Upload valid supporting documents.";
+  }
 
   const deliveryDate = new Date(values.deliveryDate);
   const expirationDate = new Date(values.expirationDate);

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { BLOCKED_ACTIVITY_MESSAGE, getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isHttpOrUploadedFileUrl } from "@/lib/upload-url";
 
 export type QuotationActionState = {
   success: boolean;
@@ -25,6 +26,9 @@ export async function saveQuotation(
   _state: QuotationActionState,
   data: FormData,
 ): Promise<QuotationActionState> {
+  if (data.getAll("listingUploadPending").some(Boolean)) {
+    return { success: false, message: "Wait for the quotation file to finish uploading." };
+  }
   const user = await getCurrentUser();
   if (!user) return { success: false, message: "Sign in to submit a quotation." };
   if (user.blockedAt) return { success: false, message: BLOCKED_ACTIVITY_MESSAGE };
@@ -60,6 +64,7 @@ export async function saveQuotation(
   if (!values.warranty) errors.warranty = "Enter the warranty.";
   if (!values.paymentTerms) errors.paymentTerms = "Enter payment terms.";
   if (values.technicalSpecification.length < 20) errors.technicalSpecification = "Provide at least 20 characters.";
+  if (values.pdfUrl && !isHttpOrUploadedFileUrl(values.pdfUrl)) errors.pdfUrl = "Upload a valid quotation document.";
   if (intent !== "draft" && !values.validUntil) errors.validUntil = "Select how long the offer remains valid.";
   if (Object.keys(errors).length) return { success: false, message: "Correct the highlighted fields.", errors };
 
@@ -161,13 +166,19 @@ export async function sendQuotationMessage(
   _state: QuotationActionState,
   data: FormData,
 ): Promise<QuotationActionState> {
+  if (data.getAll("listingUploadPending").some(Boolean)) {
+    return { success: false, message: "Wait for the attachment to finish uploading." };
+  }
   const user = await getCurrentUser();
   if (!user) return { success: false, message: "Sign in to send a message." };
   if (user.blockedAt) return { success: false, message: BLOCKED_ACTIVITY_MESSAGE };
   const quotationId = text(data, "quotationId");
   const body = text(data, "body");
   const attachmentUrl = text(data, "attachmentUrl");
-  if (!body && !attachmentUrl) return { success: false, message: "Enter a message or attach a file URL." };
+  if (!body && !attachmentUrl) return { success: false, message: "Enter a message or attach a file." };
+  if (attachmentUrl && !isHttpOrUploadedFileUrl(attachmentUrl)) {
+    return { success: false, message: "Upload a valid attachment." };
+  }
   if (body.length > 3000) return { success: false, message: "Messages are limited to 3,000 characters." };
   const quotation = await prisma.vendorQuotation.findFirst({
     where: {

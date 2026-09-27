@@ -14,6 +14,7 @@ import {
   verifyPassword,
 } from "@/lib/auth";
 import { sendPasswordResetEmail } from "@/lib/email";
+import { isHttpOrUploadedFileUrl } from "@/lib/upload-url";
 
 export type AccountActionState = {
   success: boolean;
@@ -32,15 +33,13 @@ export async function updateProfile(
   const user = await getCurrentUser();
   if (!user) return { success: false, message: "Your session expired. Sign in again." };
   if (user.blockedAt) return { success: false, message: BLOCKED_ACTIVITY_MESSAGE };
+  if (data.getAll("listingUploadPending").some(Boolean)) {
+    return { success: false, message: "Wait for the profile photo to finish uploading." };
+  }
 
   const profileImageUrl = optionalText(data, "profileImageUrl", 500);
-  if (profileImageUrl && !profileImageUrl.startsWith("/api/listing-images/")) {
-    try {
-      const parsed = new URL(profileImageUrl);
-      if (!["http:", "https:"].includes(parsed.protocol)) throw new Error();
-    } catch {
-      return { success: false, message: "Enter a valid HTTPS profile photo URL." };
-    }
+  if (profileImageUrl && !isHttpOrUploadedFileUrl(profileImageUrl)) {
+    return { success: false, message: "Upload a valid profile photo." };
   }
 
   await prisma.user.update({

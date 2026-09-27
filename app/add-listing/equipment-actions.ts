@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { createHash, randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { BLOCKED_ACTIVITY_MESSAGE, getActivityRestriction, getCurrentUser } from "@/lib/auth";
+import { isHttpOrUploadedFileUrl } from "@/lib/upload-url";
 
 export type EquipmentDraftState = { success: boolean; message: string; equipmentId?: string; editToken?: string; errors?: Record<string, string> };
 export type EquipmentReviewData = {
@@ -21,7 +22,6 @@ export type EquipmentPublishState = { success: boolean; message: string; slug?: 
 
 const text = (data: FormData, name: string) => String(data.get(name) ?? "").trim();
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
-const isUrl = (value: string) => value.startsWith("/api/private-files") || (() => { try { return ["http:", "https:"].includes(new URL(value).protocol); } catch { return false; } })();
 const slugify = (value: string) => `${value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 70) || "equipment"}-${crypto.randomUUID().slice(0, 8)}`;
 const parseSpecifications = (value: string) => value.split("\n").map((line) => line.trim()).filter(Boolean).map((line) => {
   const [label, ...rest] = line.split(":");
@@ -122,8 +122,8 @@ export async function saveEquipmentMedia(_state: EquipmentMediaState, data: Form
   const names = data.getAll("documentNames").map(String), types = data.getAll("documentTypes").map(String), urls = data.getAll("documentUrls").map(String);
   const documents = urls.map((url, index) => ({ name: names[index]?.trim() ?? "", documentType: types[index]?.trim() || "Other", documentUrl: url.trim() })).filter((item) => item.name || item.documentUrl);
   const errors: Record<string, string> = {};
-  if (!images.length || images.length > 8 || images.some((url) => !isUrl(url))) errors.images = "Add between one and eight valid image URLs.";
-  if (documents.length > 5 || documents.some((item) => !item.name || !isUrl(item.documentUrl))) errors.documents = "Each document needs a name and valid URL.";
+  if (!images.length || images.length > 8 || images.some((url) => !isHttpOrUploadedFileUrl(url))) errors.images = "Upload between one and eight valid images.";
+  if (documents.length > 5 || documents.some((item) => !item.name || !isHttpOrUploadedFileUrl(item.documentUrl))) errors.documents = "Each uploaded document needs a name.";
   if (Object.keys(errors).length) return { success: false, message: "Please correct the media details.", errors };
   const draft = await prisma.equipment.findFirst({ where: { id: equipmentId, listingStatus: "draft", draftTokenHash: hash(editToken) }, select: { id: true } });
   if (!draft) return { success: false, message: "This equipment draft could not be verified." };

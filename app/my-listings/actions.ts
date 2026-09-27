@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import type { Prisma } from "@prisma/client";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isHttpOrUploadedFileUrl } from "@/lib/upload-url";
 
 export type OwnedListingType =
   | "contractor"
@@ -50,6 +51,7 @@ async function ownedListing(type: OwnedListingType, id: string, userId: string) 
 }
 
 export async function updateOwnedListing(data: FormData) {
+  if (data.getAll("listingUploadPending").some(Boolean)) throw new Error("UPLOAD_PENDING");
   const user = await getCurrentUser();
   if (!user || user.role === "admin") throw new Error("UNAUTHORIZED");
   if (user.blockedAt) throw new Error("ACCOUNT_BLOCKED");
@@ -64,6 +66,7 @@ export async function updateOwnedListing(data: FormData) {
   const description = value(data, "description", 3000);
   if (title.length < 2 || description.length < 20) throw new Error("INVALID_LISTING_DATA");
   const documentUrls = lines(data, "documentUrls").slice(0, 5);
+  if (documentUrls.some((url) => !isHttpOrUploadedFileUrl(url))) throw new Error("INVALID_UPLOAD");
   const documentData = documentUrls.map((documentUrl, index) => ({
     name: documentUrl.split("/").pop()?.replace(/^[0-9a-f-]{36}/i, "") || `Document ${index + 1}`,
     documentType: "Other",

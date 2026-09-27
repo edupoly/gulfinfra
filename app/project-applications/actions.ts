@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { BLOCKED_ACTIVITY_MESSAGE, getCurrentUser, normalizeEmail } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isHttpOrUploadedFileUrl } from "@/lib/upload-url";
 
 export type ProjectApplicationState = {
   success: boolean;
@@ -26,6 +27,9 @@ export async function submitProjectApplication(
   _state: ProjectApplicationState,
   data: FormData,
 ): Promise<ProjectApplicationState> {
+  if (data.getAll("listingUploadPending").some(Boolean)) {
+    return { success: false, message: "Wait for the supporting document to finish uploading." };
+  }
   const user = await getCurrentUser();
   if (!user?.emailVerifiedAt) return { success: false, message: "Sign in with a verified account to apply." };
   if (user.blockedAt) return { success: false, message: BLOCKED_ACTIVITY_MESSAGE };
@@ -47,14 +51,8 @@ export async function submitProjectApplication(
   if (!values.contactPhone) errors.contactPhone = "Enter a contact phone.";
   if (!values.proposedRole) errors.proposedRole = "Describe your proposed role or service.";
   if (values.coverMessage.length < 30 || values.coverMessage.length > 3000) errors.coverMessage = "Use between 30 and 3,000 characters.";
-  if (values.supportingDocumentUrl && !values.supportingDocumentUrl.startsWith("/api/private-files")) {
-    try {
-      const url = new URL(values.supportingDocumentUrl);
-      if (!["http:", "https:"].includes(url.protocol)) throw new Error();
-    } catch {
-      errors.supportingDocumentUrl = "Enter a valid HTTPS document URL.";
-    }
-  }
+  if (values.supportingDocumentUrl && !isHttpOrUploadedFileUrl(values.supportingDocumentUrl))
+    errors.supportingDocumentUrl = "Upload a valid supporting document.";
   if (Object.keys(errors).length) return { success: false, message: "Correct the highlighted fields.", errors };
 
   const project = await prisma.projectTender.findFirst({

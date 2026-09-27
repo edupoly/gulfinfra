@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { createHash, randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { BLOCKED_ACTIVITY_MESSAGE, getActivityRestriction, getCurrentUser } from "@/lib/auth";
+import { isHttpOrUploadedFileUrl } from "@/lib/upload-url";
 
 export type ContractorDraftState = {
   success: boolean;
@@ -64,16 +65,6 @@ const splitList = (value: string) =>
 const optionalText = (value: string) => value || null;
 const hashToken = (token: string) =>
   createHash("sha256").update(token).digest("hex");
-
-function isWebUrl(value: string) {
-  if (value.startsWith("/api/private-files")) return true;
-  try {
-    const url = new URL(value);
-    return ["http:", "https:"].includes(url.protocol);
-  } catch {
-    return false;
-  }
-}
 
 function makeSlug(name: string) {
   const base =
@@ -317,11 +308,11 @@ export async function saveContractorMedia(
   if (!contractorId || !editToken) {
     return { success: false, message: "This draft session has expired. Start a new listing." };
   }
-  if (logoUrl && !isWebUrl(logoUrl)) {
-    errors.logoUrl = "Enter a complete http:// or https:// logo URL.";
+  if (logoUrl && !isHttpOrUploadedFileUrl(logoUrl)) {
+    errors.logoUrl = "Upload a valid logo image.";
   }
-  if (galleryUrls.length > 6 || galleryUrls.some((url) => !isWebUrl(url))) {
-    errors.galleryUrls = "Add up to six valid image URLs.";
+  if (galleryUrls.length > 6 || galleryUrls.some((url) => !isHttpOrUploadedFileUrl(url))) {
+    errors.galleryUrls = "Upload up to six valid images.";
   }
 
   const documents = documentUrls
@@ -338,10 +329,10 @@ export async function saveContractorMedia(
       (document) =>
         !document.name ||
         !document.documentUrl ||
-        !isWebUrl(document.documentUrl),
+        !isHttpOrUploadedFileUrl(document.documentUrl),
     )
   ) {
-    errors.documents = "Each document needs a name and a valid URL. Add up to five documents.";
+    errors.documents = "Each uploaded document needs a name. Add up to five documents.";
   }
   if (Object.keys(errors).length) {
     return {
