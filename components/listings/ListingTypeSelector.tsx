@@ -48,6 +48,7 @@ const listingTypes = [
 ];
 
 export function ListingTypeSelector({
+  currentUserEmail,
   contractorTypes,
   projectTenderTypes,
   equipmentTypes,
@@ -57,6 +58,7 @@ export function ListingTypeSelector({
   countries,
   cities,
 }: {
+  currentUserEmail: string;
   contractorTypes: Array<{ slug: string; name: string }>;
   projectTenderTypes: Array<{ slug: string; name: string }>;
   equipmentTypes: Array<{ slug: string; name: string }>;
@@ -73,6 +75,7 @@ export function ListingTypeSelector({
   if (activeForm === "contractors") {
     return (
       <ContractorListingForm
+        currentUserEmail={currentUserEmail}
         contractorTypes={contractorTypes}
         countries={countries}
         cities={cities}

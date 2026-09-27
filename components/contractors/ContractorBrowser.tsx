@@ -190,6 +190,7 @@ export function ContractorBrowser({
               className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
             >
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <ContractorLogo name={contractor.name} logoUrl={contractor.logoUrl} />
                 <div className="min-w-0 flex-1">
                   <div className="mb-3 flex items-center gap-2 flex-wrap">
                     <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900">
@@ -238,6 +239,19 @@ export function ContractorBrowser({
           ) : null}
         </div>
       </section>
+    </div>
+  );
+}
+
+function ContractorLogo({ name, logoUrl }: { name: string; logoUrl?: string }) {
+  return (
+    <div className="grid size-20 shrink-0 place-items-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm md:size-24">
+      {logoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={logoUrl} alt={`${name} logo`} className="size-full object-contain p-2" />
+      ) : (
+        <span aria-hidden="true" className="text-2xl font-black text-slate-400">{name.trim().charAt(0).toUpperCase()}</span>
+      )}
     </div>
   );
 }

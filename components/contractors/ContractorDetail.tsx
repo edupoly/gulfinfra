@@ -15,8 +15,10 @@ export function ContractorDetail({ contractor, saveControl }: Props) {
             ← Back to Contractors
           </Link>
           {saveControl && <div className="mb-6">{saveControl}</div>}
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+            <ContractorLogo name={contractor.name} logoUrl={contractor.logoUrl} />
+            <div>
             <span className="mb-3 inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold">
               VERIFIED CONTRACTOR
             </span>
@@ -24,6 +26,7 @@ export function ContractorDetail({ contractor, saveControl }: Props) {
             <p className="mt-2 text-slate-200">
               {contractor.companyType} • Established {contractor.yearEstablished}
             </p>
+            </div>
           </div>
           <div className="grid gap-2 text-sm text-slate-100 sm:grid-cols-2">
             <div>Rating: {contractor.rating.toFixed(1)} ★</div>
@@ -160,6 +163,19 @@ export function ContractorDetail({ contractor, saveControl }: Props) {
           </Link> */}
         </aside>
       </section>
+    </div>
+  );
+}
+
+function ContractorLogo({ name, logoUrl }: { name: string; logoUrl?: string }) {
+  return (
+    <div className="grid size-28 shrink-0 place-items-center overflow-hidden rounded-3xl border border-white/20 bg-white shadow-2xl sm:size-32">
+      {logoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={logoUrl} alt={`${name} logo`} className="size-full object-contain p-3" />
+      ) : (
+        <span aria-hidden="true" className="text-4xl font-black text-slate-400">{name.trim().charAt(0).toUpperCase()}</span>
+      )}
     </div>
   );
 }

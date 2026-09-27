@@ -38,6 +38,7 @@ type ContractorRecord = {
   slug: string;
   categorySlug: string;
   name: string;
+  logoUrl?: string | null;
   companyType: string;
   countryCode?: string | null;
   citySlug?: string | null;
@@ -79,6 +80,7 @@ const mapContractorRecord = (
 ): ContractorProfile => ({
   slug: contractor.slug,
   name: contractor.name,
+  logoUrl: contractor.logoUrl ?? "",
   category: contractor.categorySlug,
   companyType: contractor.companyType,
   primaryType:
@@ -186,6 +188,7 @@ export async function getAllContractors(): Promise<ContractorProfile[]> {
       slug: true,
       categorySlug: true,
       name: true,
+      logoUrl: true,
       companyType: true,
       countryCode: true,
       citySlug: true,

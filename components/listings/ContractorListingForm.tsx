@@ -11,11 +11,13 @@ type Option = { slug: string; name: string };
 type City = { slug: string; name: string; countryCode: string };
 
 export function ContractorListingForm({
+  currentUserEmail,
   contractorTypes,
   countries,
   cities,
   onBack,
 }: {
+  currentUserEmail: string;
   contractorTypes: Option[];
   countries: Array<{ code: string; name: string }>;
   cities: City[];
@@ -151,7 +153,7 @@ export function ContractorListingForm({
         </FormSection>
 
         <FormSection title="Contact details" description="How clients can reach your business.">
-          <label><span className="font-bold text-slate-800">Business email *</span><input name="email" type="email" required defaultValue="projects@gulfhorizon.example" className={field} /></label>
+          <label><span className="font-bold text-slate-800">Business email *</span><input name="email" type="email" required defaultValue={currentUserEmail || "projects@gulfhorizon.example"} className={field} /></label>
           <label><span className="font-bold text-slate-800">Phone *</span><input name="phone" type="tel" required defaultValue="+971 4 555 0182" placeholder="+971..." className={field} /></label>
           <label><span className="font-bold text-slate-800">WhatsApp</span><input name="whatsapp" type="tel" defaultValue="+971 50 555 0182" placeholder="+971..." className={field} /></label>
           <label><span className="font-bold text-slate-800">Website</span><input name="website" type="url" defaultValue="https://gulfhorizon.example" placeholder="https://..." className={field} /></label>

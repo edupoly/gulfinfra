@@ -35,6 +35,7 @@ export type City = {
 export type ContractorProfile = {
   slug: string;
   name: string;
+  logoUrl?: string;
   category: string;
   companyType: string;
   primaryType: string;

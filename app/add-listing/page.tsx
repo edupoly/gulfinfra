@@ -34,6 +34,7 @@ export default async function AddListingPage() {
     <main className="min-h-[calc(100vh-4rem)] bg-[#f4f7fb] px-4 py-8 sm:px-6 sm:py-12 lg:px-10">
       <div className="mx-auto max-w-[1500px]">
         <ListingTypeSelector
+          currentUserEmail={user?.email ?? ""}
           contractorTypes={taxonomy.contractorTypes}
           projectTenderTypes={taxonomy.projectTenderTypes}
           countries={countries}
