@@ -32,6 +32,7 @@ export function EmailAuthFlow({
   const router = useRouter();
   const [email, setEmail] = useState(defaultEmail);
   const [usePassword, setUsePassword] = useState(false);
+  const [changingEmail, setChangingEmail] = useState(false);
   const completed = useRef(false);
   const checkedSession = useRef(false);
   const [requestState, requestAction, requesting] = useActionState(requestOtp, initial);
@@ -41,7 +42,7 @@ export function EmailAuthFlow({
   const activeEmail = lockEmail ? defaultEmail : email;
   const verificationEmail = requestState.email || activeEmail;
 
-  const stage: "email" | "otp" | "password" | "complete" =
+  const actionStage: "email" | "otp" | "password" | "complete" =
     passwordState.success || loginState.success || verifyState.step === "complete"
       ? "complete"
       : verifyState.success && verifyState.step === "password"
@@ -51,6 +52,7 @@ export function EmailAuthFlow({
           : requestState.step === "otp"
             ? "otp"
             : "email";
+  const stage = changingEmail ? "email" : actionStage;
 
   useEffect(() => {
     if (stage !== "complete" || completed.current) return;
@@ -64,12 +66,13 @@ export function EmailAuthFlow({
     checkedSession.current = true;
 
     void getSignedInEmail().then((sessionEmail) => {
-      if (!sessionEmail) return;
-      if (lockEmail && activeEmail && sessionEmail !== activeEmail.trim().toLowerCase()) return;
+      const targetEmail = activeEmail.trim().toLowerCase() || sessionEmail;
+      if (!targetEmail) return;
+      if (lockEmail && activeEmail && sessionEmail !== targetEmail) return;
 
-      setEmail(sessionEmail);
+      setEmail(targetEmail);
       const data = new FormData();
-      data.set("email", sessionEmail);
+      data.set("email", targetEmail);
       data.set("purpose", purpose);
       startTransition(() => requestAction(data));
     });
@@ -92,7 +95,7 @@ export function EmailAuthFlow({
       </p>
 
       {stage === "email" && !usePassword && (
-        <form action={requestAction} className="mt-5">
+        <form action={requestAction} onSubmit={() => setChangingEmail(false)} className="mt-5">
           <input type="hidden" name="purpose" value={purpose} />
           <label className="block text-sm font-bold text-slate-700">
             {lockEmail ? "Verification code will be sent to" : "Email address"}
@@ -162,7 +165,16 @@ export function EmailAuthFlow({
               To change the recipient, return to step two.
             </p>
           ) : (
-            <button type="button" onClick={() => window.location.reload()} className="mt-3 w-full text-sm font-bold text-blue-700 underline">Use another email</button>
+            <button
+              type="button"
+              onClick={() => {
+                setEmail("");
+                setChangingEmail(true);
+              }}
+              className="mt-3 w-full text-sm font-bold text-blue-700 underline"
+            >
+              Use another email
+            </button>
           )}
         </form>
       )}
