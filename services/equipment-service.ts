@@ -147,7 +147,7 @@ export async function getAllEquipment(): Promise<EquipmentProfile[]> {
     relationLoadStrategy: "join",
     where: { listingStatus: "published" },
     select: equipmentSelect,
-    orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
+    orderBy: { createdAt: "desc" },
   });
 
   return rows.map(mapEquipment);

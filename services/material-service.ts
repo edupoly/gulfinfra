@@ -57,7 +57,7 @@ export async function getMaterialFilters() {
 export async function getAllMaterials(): Promise<MaterialProfile[]> {
   if (!usePrisma) return materialListings;
   const rows = await prisma.material.findMany({
-    relationLoadStrategy: "join", where: { listingStatus: "published" }, select, orderBy: [{ featured: "desc" }, { verified: "desc" }, { createdAt: "desc" }],
+    relationLoadStrategy: "join", where: { listingStatus: "published" }, select, orderBy: { createdAt: "desc" },
   });
   if (rows.length === 0) return materialListings;
   return rows.map((row) => map(row as Parameters<typeof map>[0]));

@@ -47,7 +47,7 @@ export async function getAllBusinessOpportunities(): Promise<BusinessOpportunity
     relationLoadStrategy: "join",
     where: { listingStatus: "published" },
     select,
-    orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
+    orderBy: { createdAt: "desc" },
   });
   return [...rows.map(map), ...businessOpportunities];
 }

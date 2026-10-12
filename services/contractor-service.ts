@@ -218,7 +218,7 @@ export async function getAllContractors(): Promise<ContractorProfile[]> {
         },
       },
     },
-    orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
+    orderBy: { createdAt: "desc" },
   });
 
   return rows.map(mapContractorRecord);
