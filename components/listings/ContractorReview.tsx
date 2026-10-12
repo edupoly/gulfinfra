@@ -78,7 +78,11 @@ export function ContractorReview({
           <p className="rounded-2xl bg-red-50 p-4 text-center font-bold text-red-700" role="alert">{state.message}</p>
         )}
 
-        <ListingPublishGate email={review.email}>
+        <ListingPublishGate
+          email={review.email}
+          lockEmail
+          preserveAdminSession
+        >
         <form action={formAction} className="flex justify-end">
           <input type="hidden" name="contractorId" value={contractorId} />
           <input type="hidden" name="editToken" value={editToken} />

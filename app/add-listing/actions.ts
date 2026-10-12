@@ -468,7 +468,7 @@ export async function publishContractor(
       listingStatus: "draft",
       draftTokenHash: hashToken(editToken),
     },
-    select: { id: true, slug: true },
+    select: { id: true, slug: true, email: true },
   });
   if (!draft) {
     return {
@@ -478,12 +478,33 @@ export async function publishContractor(
   }
 
   try {
+    const owner = user.role === "admin" && draft.email
+      ? await prisma.user.findUnique({
+          where: { email: draft.email.toLowerCase() },
+          select: { id: true, emailVerifiedAt: true },
+        })
+      : user;
+
+    if (!owner?.emailVerifiedAt) {
+      return {
+        success: false,
+        message: "Verify the contractor email before publishing this listing.",
+      };
+    }
+    if (user.role !== "admin" && draft.email?.toLowerCase() !== user.email.toLowerCase()) {
+      return {
+        success: false,
+        message: "Verify the contractor email before publishing this listing.",
+      };
+    }
+
+    const approvedByAdmin = user.role === "admin";
     await prisma.contractor.update({
       where: { id: draft.id },
       data: {
-        listingStatus: "pending",
+        listingStatus: approvedByAdmin ? "published" : "pending",
         draftTokenHash: null,
-        ownerId: user.id,
+        ownerId: owner.id,
         memberSince: String(new Date().getFullYear()),
       },
     });
@@ -493,7 +514,9 @@ export async function publishContractor(
 
     return {
       success: true,
-      message: "Your contractor listing was submitted for admin approval.",
+      message: approvedByAdmin
+        ? "The contractor listing was approved and published. Your admin session remains active."
+        : "Your contractor listing was submitted for admin approval.",
       slug: draft.slug,
     };
   } catch (error) {

@@ -5,9 +5,13 @@ import { EmailAuthFlow } from "@/components/auth/EmailAuthFlow";
 
 export function ListingPublishGate({
   email,
+  lockEmail = false,
+  preserveAdminSession = false,
   children,
 }: {
   email?: string | null;
+  lockEmail?: boolean;
+  preserveAdminSession?: boolean;
   children: ReactNode;
 }) {
   const [verified, setVerified] = useState(false);
@@ -26,11 +30,19 @@ export function ListingPublishGate({
 
   return (
     <div ref={publishContainer} className="space-y-5 border-t border-slate-200 pt-6">
-      {!verified && <EmailAuthFlow defaultEmail={email ?? ""} requireOtp onAuthenticated={() => setVerified(true)} />}
+      {!verified && (
+        <EmailAuthFlow
+          defaultEmail={email ?? ""}
+          requireOtp
+          lockEmail={lockEmail}
+          preserveAdminSession={preserveAdminSession}
+          onAuthenticated={() => setVerified(true)}
+        />
+      )}
       {verified && (
         <>
           <p role="status" className="rounded-xl bg-emerald-50 p-4 text-center font-bold text-emerald-700">
-            ✓ Email verified. Submitting your listing for admin approval…
+            ✓ Email verified. Submitting your listing…
           </p>
           {children}
         </>

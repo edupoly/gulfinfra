@@ -20,6 +20,7 @@ export function EmailAuthFlow({
   requireOtp = false,
   purpose = "login",
   lockEmail = false,
+  preserveAdminSession = false,
   redirectTo,
 }: {
   defaultEmail?: string;
@@ -27,6 +28,7 @@ export function EmailAuthFlow({
   requireOtp?: boolean;
   purpose?: "login" | "rfq_create";
   lockEmail?: boolean;
+  preserveAdminSession?: boolean;
   redirectTo?: string | null;
 }) {
   const router = useRouter();
@@ -153,6 +155,9 @@ export function EmailAuthFlow({
         <form action={verifyAction} className="mt-5">
           <input type="hidden" name="email" value={verificationEmail} />
           <input type="hidden" name="purpose" value={purpose} />
+          {preserveAdminSession && (
+            <input type="hidden" name="preserveAdminSession" value="true" />
+          )}
           <label className="block text-sm font-bold text-slate-700">
             4-digit verification code
             <input name="code" inputMode="numeric" pattern="[0-9]{4}" maxLength={4} required autoFocus autoComplete="one-time-code" className={`${field} text-center text-2xl font-black tracking-[0.35em]`} />

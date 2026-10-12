@@ -90,6 +90,7 @@ export async function verifyOtp(_state: AuthState, data: FormData): Promise<Auth
   const email = normalizeEmail(String(data.get("email") ?? ""));
   const code = String(data.get("code") ?? "").trim();
   const purpose = otpPurpose(data);
+  const currentUser = await getCurrentUser();
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user || !/^\d{4}$/.test(code)) return { success: false, message: "Enter the valid 4-digit code.", step: "otp", email };
 
@@ -108,13 +109,27 @@ export async function verifyOtp(_state: AuthState, data: FormData): Promise<Auth
     prisma.emailOtp.update({ where: { id: otp.id }, data: { consumedAt: new Date() } }),
     prisma.user.update({ where: { id: user.id }, data: { emailVerifiedAt: user.emailVerifiedAt ?? new Date() } }),
   ]);
-  await createSession(user.id);
+  const preserveAdminSession =
+    data.get("preserveAdminSession") === "true" &&
+    currentUser?.role === "admin" &&
+    currentUser.id !== user.id;
+
+  if (!preserveAdminSession) await createSession(user.id);
+
   return {
     success: true,
-    message: user.passwordHash ? "Email verified." : "Email verified. Create your password.",
-    step: user.passwordHash ? "complete" : "password",
+    message: preserveAdminSession
+      ? "Listing email verified. Your admin session remains active."
+      : user.passwordHash
+        ? "Email verified."
+        : "Email verified. Create your password.",
+    step: preserveAdminSession || user.passwordHash ? "complete" : "password",
     email,
-    redirectTo: user.role === "admin" ? "/admin" : "/my-listings",
+    redirectTo: preserveAdminSession
+      ? "/admin"
+      : user.role === "admin"
+        ? "/admin"
+        : "/my-listings",
   };
 }
 

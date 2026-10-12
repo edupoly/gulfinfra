@@ -91,9 +91,14 @@ export function AdminListingManager({ groups }: { groups: AdminListingGroup[] })
   );
   const filteredGroups = groups.map((group) => ({
     ...group,
-    records: group.records.filter(
-      (record) => featuredOnly ? record.featured : selectedStatuses.has(record.status),
-    ),
+    records: group.records
+      .filter((record) =>
+        featuredOnly ? record.featured : selectedStatuses.has(record.status),
+      )
+      .toSorted(
+        (left, right) =>
+          new Date(right.date).getTime() - new Date(left.date).getTime(),
+      ),
   }));
   const visibleCount = filteredGroups.reduce((total, group) => total + group.records.length, 0);
   const totalCount = groups.reduce((total, group) => total + group.records.length, 0);
@@ -225,7 +230,7 @@ export function AdminListingManager({ groups }: { groups: AdminListingGroup[] })
                           className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-black text-blue-700 hover:bg-blue-100"
                         >
                           <FontAwesomeIcon icon={faEye} className="w-3" />
-                          Review details
+                          Review and Approve
                         </button>
                         {record.type !== "rfq" && record.status === "published" && (
                           <FeaturedButton
