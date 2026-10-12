@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { SiteNavbar } from "@/components/SiteNavbar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { getCurrentUser } from "@/lib/auth";
+import { PublicLanguageProvider } from "@/components/i18n/PublicLanguageProvider";
 import "./globals.css";
 
 import "@fortawesome/fontawesome-svg-core/styles.css"; // Import the CSS manually
@@ -23,9 +24,11 @@ export default async function RootLayout({
   return (
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
-        <SiteNavbar userEmail={user?.email ?? null} userRole={user?.role ?? null} />
-        {children}
-        <SiteFooter />
+        <PublicLanguageProvider>
+          <SiteNavbar userEmail={user?.email ?? null} userRole={user?.role ?? null} />
+          {children}
+          <SiteFooter />
+        </PublicLanguageProvider>
       </body>
     </html>
   );

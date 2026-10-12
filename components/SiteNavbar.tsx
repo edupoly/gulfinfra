@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { usePublicLanguage } from "@/components/i18n/PublicLanguageProvider";
 
 const navigation = [
   { name: "Home", href: "/" },
@@ -26,6 +27,8 @@ export function SiteNavbar({
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const { language, setLanguage } = usePublicLanguage();
+  const showLanguageSwitch = !["/admin", "/my-", "/messages", "/notifications", "/login", "/forgot-password", "/reset-password"].some((prefix) => pathname.startsWith(prefix));
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0b1f3a]/[0.98] text-white shadow-lg backdrop-blur-xl">
@@ -56,6 +59,12 @@ export function SiteNavbar({
             </ul>
           </nav>
           <div className="mt-5 flex flex-col items-start gap-2 border-t border-white/10 pt-5 xl:mt-0 xl:items-end xl:border-0 xl:pt-0">
+            {showLanguageSwitch && (
+              <div className="flex rounded-lg border border-white/20 bg-white/5 p-1" role="group" aria-label="Language selection">
+                <button type="button" lang="en" onClick={() => setLanguage("en")} aria-pressed={language === "en"} className={`rounded-md px-2.5 py-1.5 text-xs font-black transition ${language === "en" ? "bg-white text-[#0b1f3a]" : "text-white hover:bg-white/10"}`}>English</button>
+                <button type="button" lang="ar" onClick={() => setLanguage("ar")} aria-pressed={language === "ar"} className={`rounded-md px-2.5 py-1.5 text-xs font-black transition ${language === "ar" ? "bg-amber-400 text-[#0b1f3a]" : "text-white hover:bg-white/10"}`}>العربية</button>
+              </div>
+            )}
             {userEmail ? (
               <div className="flex items-center gap-2 text-xs font-bold text-white/90">
                 <Link href={userRole === "admin" ? "/admin" : "/my-listings"} onClick={() => setOpen(false)}>
